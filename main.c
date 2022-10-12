@@ -1,12 +1,12 @@
-//LEMBRETES PARA IMPLEMENTAR: linhas 17, 295, 320, 335
+//LEMBRETES PARA IMPLEMENTAR: linhas 18, 187, 296, 321, 336
 
 //Pedro Henrique Rabelo Leão de Oliveira - 22.1.4022
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-int menu(); //exibe o menu e retorna a entrada da opção escolhida pelo usuário
-void leNomeJogadores(char *jogador1, char *jogador2, int numJogadores);
+char menu(); //exibe o menu e retorna a entrada da opção escolhida pelo usuário
+void leNomeJogadores(char *jogador1, char *jogador2, char numJogadores);
 void iniciaPartidaVazia(char **partida);
 void exibeJogo(char **partida);
 void leComando(char *comando, char *acao, char *jogador);
@@ -22,33 +22,38 @@ void liberaMatriz(char **matriz, int n);
 int main(){
     printf("Bem vindo ao Jogo da Velha\n\n");
     
-    int opMenu, numJogadores;
-    char jogador1[100], jogador2[100], **partida;
+    char opMenu;
+    char jogador1[100], jogador2[100], **partida, numJogadores[3];
     partida = alocaMatriz(3, 3);
     do{
         opMenu = menu();
 
         switch (opMenu)
         {
-            case 0: //encerrar jogo  
+            case '0': //encerrar jogo  
                 printf("Jogo Encerrado!");
             break;
 
-            case 1: //iniciar novo jogo
+            case '1': //iniciar novo jogo
                 do{
                     printf("\nDigite o número de jogadores (1 ou 2): ");
-                    scanf("%d", &numJogadores);
-
-                    if(numJogadores != 1 && numJogadores != 2)
+                    //o numJogadores pode ter apenas 1 caracter, já que é 1 ou 2 jogadores, mas o limite do fgets é 3 apenas para fazer a validação
+                    //se o numJogadores[1] != '\n', sinal que o usuario digitou mais de um caracter
+                    fgets(numJogadores, 3, stdin); 
+                    if(numJogadores[1] != '\n'){
+                        while(getchar() != '\n'); //limpando o buffer dos caracteres lidos além 3°
+                        printf("\nNúmero de jogadores inválido!\n");
+                    }
+                    else if(numJogadores[0] != '1' && numJogadores[0] != '2')
                         printf("\nNúmero de jogadores inválido!\n");
 
-                } while (numJogadores != 1 && numJogadores != 2);   
+                } while (numJogadores[1]!='\n' || (numJogadores[0] != '1' && numJogadores[0] != '2'));   
 
                 iniciaPartidaVazia(partida);
-                leNomeJogadores(jogador1, jogador2, numJogadores);
+                leNomeJogadores(jogador1, jogador2, numJogadores[0]);
                 exibeJogo(partida);
 
-                if(numJogadores == 1){
+                if(numJogadores[0] == '1'){
                     //programar função para jogar contra o bot do computador
                 }   
                 else{ //2 jogadores                    
@@ -67,11 +72,11 @@ int main(){
 
             break;
 
-            case 2: //continuar jogo salvo
+            case '2': //continuar jogo salvo
 
             break;
 
-            case 3: //continuar jogo atual
+            case '3': //continuar jogo atual
 
             break;
 
@@ -80,14 +85,14 @@ int main(){
             break;
         }
 
-    } while (opMenu != 0);
+    } while (opMenu != '0');
 
     liberaMatriz(partida, 3);
         
     return 0;
 }
 
-int menu(){
+char menu(){
     printf("0. Sair do Jogo\n");
     printf("1. Começar um novo jogo\n");
     printf("2. Continuar um jogo salvo\n");
@@ -95,26 +100,29 @@ int menu(){
     printf("4. Exibir o ranking\n");
     printf("Durante o jogo digite “voltar” para retornar ao menu.\n");
 
-    int op;
+    char op[3];
     do{
-        printf("\nEscolha a opção: ");    
-        scanf("%d", &op);
-
-        if(op < 0 || op > 4)
+        printf("\nEscolha a opção: ");
+        //o op pode ter apenas 1 caracter, já que o menu é de 1 a 4, mas o limite do fgets é 3 apenas para fazer a validação
+        //se o op[1] != '\n', sinal que o usuario digitou mais de um caracter
+        fgets(op, 3, stdin); 
+        if(op[1] != '\n'){
+            while(getchar() != '\n'); //limpando o buffer dos caracteres lidos além 3°
             printf("Opção inválida!");
-    }while(op<0 || op>4);
-
-    return op;
+        }
+        else if(op[0] < '0' || op[0] > '4')
+            printf("Opção inválida!");
+    }while(op[1] != '\n' || op[0]<'0' || op[0]>'4');
+    
+    return op[0];
 }
 
-void leNomeJogadores(char *jogador1, char *jogador2, int numJogadores){
-    getchar();
-
+void leNomeJogadores(char *jogador1, char *jogador2, char numJogadores){
     printf("Digite o nome do jogador 1: ");
     fgets(jogador1, 100, stdin);
     jogador1[strlen(jogador1)-1] = '\0';
 
-    if(numJogadores == 2){
+    if(numJogadores == '2'){
         printf("Digite o nome do jogador 2: ");
         fgets(jogador2, 100, stdin);
         jogador2[strlen(jogador2)-1] = '\0';
