@@ -1,4 +1,4 @@
-//LEMBRETES PARA IMPLEMENTAR: linhas 18, 187, 296, 321, 336
+//LEMBRETES PARA IMPLEMENTAR: linhas 18, 57, 278, 304, 320
 
 //Pedro Henrique Rabelo Leão de Oliveira - 22.1.4022
 #include <stdio.h>
@@ -31,7 +31,7 @@ int main(){
         switch (opMenu)
         {
             case '0': //encerrar jogo  
-                printf("Jogo Encerrado!");
+                printf("Jogo Encerrado!\n");
             break;
 
             case '1': //iniciar novo jogo
@@ -49,7 +49,7 @@ int main(){
 
                 } while (numJogadores[1]!='\n' || (numJogadores[0] != '1' && numJogadores[0] != '2'));   
 
-                iniciaPartidaVazia(partida);
+                iniciaPartidaVazia(partida); //limpando o tabuleiro das possíveis partidas anteriores
                 leNomeJogadores(jogador1, jogador2, numJogadores[0]);
                 exibeJogo(partida);
 
@@ -68,6 +68,9 @@ int main(){
                         else
                             partidaFinalizada = executaPartidaDeDois(partida, jogador1, 1, jogador2);
                     }
+
+                    printf("Digite qualquer tecla para continuar!\n");
+                    while(getchar() != '\n');
                 }       
 
             break;
@@ -192,94 +195,65 @@ int verificaPosicao(int linha, int coluna, char **partida){
 }
 
 int verificaPartida(char **partida, char *jogador, int jogadorDaVez){
-    //implementar caso de empate
-    if(jogadorDaVez == 1){
-        if(partida[0][0] == 'X'){
-            if(partida[0][1] == 'X' && partida[0][2] == 'X'){
-                printf("Parabéns %s, você ganhou!\n", jogador);
-                return 1;
-            }
-            else if(partida[1][0] == 'X' && partida[2][0] == 'X'){
-                printf("Parabéns %s, você ganhou!\n", jogador);
-                return 1;
-            }
-            else if(partida[1][1] == 'X' && partida[2][2] == 'X'){
-                printf("Parabéns %s, você ganhou!\n", jogador);
-                return 1;
-            }
+
+    char verificador = jogadorDaVez == 1 ? 'X' : 'O';
+
+    if(partida[0][0] == verificador){
+        if(partida[0][1] == verificador && partida[0][2] == verificador){
+            printf("Parabéns %s, você ganhou!\n", jogador);
+            return 1;
         }
-        else if(partida[0][1] == 'X'){
-            if(partida[1][1]=='X' && partida[2][1]=='X'){
-                printf("Parabéns %s, você ganhou!\n", jogador);
-                return 1;
-            }
+        else if(partida[1][0] == verificador && partida[2][0] == verificador){
+            printf("Parabéns %s, você ganhou!\n", jogador);
+            return 1;
         }
-        else if (partida[1][0] == 'X'){
-            if (partida[1][1]=='X' && partida[1][2]=='X'){
-                printf("Parabéns %s, você ganhou!\n", jogador);
-                return 1;
-            }
-        }
-        else if (partida[2][2] == 'X'){
-            if(partida[2][0]=='X' && partida[2][1]=='X'){
-                printf("Parabéns %s, você ganhou!\n", jogador);
-                return 1;
-            }
-            else if(partida[0][2]=='X' && partida[1][2]=='X'){
-                printf("Parabéns %s, você ganhou!\n", jogador);
-                return 1;
-            }
-        }
-        else if(partida[0][2] == 'X'){
-            if(partida[1][1]=='X' && partida[2][0]=='X'){
-                printf("Parabéns %s, você ganhou!\n", jogador);
-                return 1;
-            }
+        else if(partida[1][1] == verificador && partida[2][2] == verificador){
+            printf("Parabéns %s, você ganhou!\n", jogador);
+            return 1;
         }
     }
-    else{ //jogador 2
-        if(partida[0][0] == 'O'){
-            if(partida[0][1] == 'O' && partida[0][2] == 'O'){
-                printf("Parabéns %s, você ganhou!\n", jogador);
-                return 1;
-            }
-            else if(partida[1][0] == 'O' && partida[2][0] == 'O'){
-                printf("Parabéns %s, você ganhou!\n", jogador);
-                return 1;
-            }
-            else if(partida[1][1] == 'O' && partida[2][2] == 'O'){
-                printf("Parabéns %s, você ganhou!\n", jogador);
-                return 1;
-            }
+    if(partida[0][1] == verificador){
+        if(partida[1][1]==verificador && partida[2][1]==verificador){
+            printf("Parabéns %s, você ganhou!\n", jogador);
+            return 1;
         }
-        else if(partida[0][1] == 'O'){
-            if(partida[1][1]=='O' && partida[2][1]=='O'){
-                printf("Parabéns %s, você ganhou!\n", jogador);
-                return 1;
-            }
+    }
+    if (partida[1][0] == verificador){
+        if (partida[1][1]==verificador && partida[1][2]==verificador){
+            printf("Parabéns %s, você ganhou!\n", jogador);
+            return 1;
         }
-        else if (partida[1][0] == 'O'){
-            if (partida[1][1]=='O' && partida[1][2]=='O'){
-                printf("Parabéns %s, você ganhou!\n", jogador);
-                return 1;
-            }
+    }
+    if (partida[2][2] == verificador){
+        if(partida[2][0]==verificador && partida[2][1]==verificador){
+            printf("Parabéns %s, você ganhou!\n", jogador);
+            return 1;
         }
-        else if (partida[2][2] == 'O'){
-            if(partida[2][0]=='O' && partida[2][1]=='O'){
-                printf("Parabéns %s, você ganhou!\n", jogador);
-                return 1;
-            }
-            else if(partida[0][2]=='O' && partida[1][2]=='O'){
-                printf("Parabéns %s, você ganhou!\n", jogador);
-                return 1;
-            }
+        else if(partida[0][2]==verificador && partida[1][2]==verificador){
+            printf("Parabéns %s, você ganhou!\n", jogador);
+            return 1;
         }
-        else if(partida[0][2] == 'O'){
-            if(partida[1][1]=='O' && partida[2][0]=='O'){
-                printf("Parabéns %s, você ganhou!\n", jogador);
-                return 1;
-            }
+    }
+    if(partida[0][2] == verificador){
+        if(partida[1][1]==verificador && partida[2][0]==verificador){
+            printf("Parabéns %s, você ganhou!\n", jogador);
+            return 1;
         }
+    }
+    
+    //caso de empate:
+    int contParaEmpate = 0;
+    for (int i = 0; i < 3; i++){
+        for (int j = 0; j < 3; j++){
+            if(partida[i][j]!= ' ')
+                contParaEmpate++;
+        }        
+    }
+
+    //se contParaEmpate = 9, o tabuleiro está todo preenchido, e não entrou em nenhum dos casos de vitoria acima, o jogo terminará empatado
+    if(contParaEmpate==9){ 
+        printf("Velha! O jogo terminou empatado!\n");
+        return 1;
     }
 
     return 0;
@@ -321,12 +295,14 @@ int executaPartidaDeDois(char **partida, char *jogador, int jogadorDaVez, char *
 
         exibeJogo(partida);
         
-        if(!verificaPartida(partida, jogador, jogadorDaVez)) //se verificaPartida() retornar 0, a partida ainda não acabou, caso tenha acabado, retorna 1 e exibe uma msg de parabens
+        //se verificaPartida() retornar 0, a partida ainda não acabou, caso tenha acabado, retorna 1 e exibe uma msg de parabens ou de empate
+        if(!verificaPartida(partida, jogador, jogadorDaVez)) 
             return 0;
         else
             return 1;
 
-        //implementar para depois da msg de vitoria, aparecer "Digite qualquer tecla para continuar!" e esperar o usuario digitar uma tecla se possível
+        //implementar para aos fins das partidas, atualizar o ranking com vitória, empate e derrota de cada jogador
+        //problema: o jogador que não estiver no ranking vai perder seus dados de V, E e D. O que fazer?
 
     }
     else if (!strcmp(acao, "salvar"))
