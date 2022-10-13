@@ -1,4 +1,4 @@
-//LEMBRETES PARA IMPLEMENTAR: linhas 18, 285, 350(func executarPartida)
+//LEMBRETES PARA IMPLEMENTAR: linhas 19, 318, 378(func executarPartida)
 
 //Pedro Henrique Rabelo Leão de Oliveira - 22.1.4022
 #include <stdio.h>
@@ -15,10 +15,13 @@ int verificaDigito(char posicao); //verifica se o usuario realmente digitou núm
 int verificaPosicao(int linha, int coluna, char **partida); //verifica se a posição está disponível, retorna 1 caso esteja, e 0 caso contrário
 int verificaPartida(char **partida, char *jogador, int jogadorDaVez); //retorna 1 se a partida acabou e 0 caso contrário
 int validaNomeArquivo(char *nomeArquivo);
-int partidaDeDois(char **partida, char *jogador, int jogadorDaVez, char *outroJogador); //retorna 1 se a partida acabou, 0 caso contrário, e 2 caso o jogador tenha apenas salvado ela ou digitado um comando errado
+int marcar(char **partida, int jogadorDaVez, char *comando); //retorna 1 caso a marcação dê certo, e 0 caso falhe nas validações
+void salvar(FILE *arquivo, char **partida, char numJogadores, int jogadorDaVez, char *jogador1, char *jogador2, char *nomeArquivo);
+int partidaDeDois(char **partida, char *jogador, int jogadorDaVez, char *outroJogador, int *partidaEmAndamento); //retorna 1 se a partida acabou, 0 caso contrário, e 2 caso o jogador tenha apenas salvado ela ou digitado um comando errado
                                             //tentar quebrar a função em mais funções ou diluir e colocar alguns comandos dela na main, tlvz criar tbm uma função para cada opção de ação
-void executarPartida(char numJogadores, char **partida, char *jogador1, char *jogador2, int jogadorDaVez);
-void getJogoSalvo(FILE *arquivo);
+void executarPartida(char numJogadores, char **partida, char *jogador1, char *jogador2, int jogadorDaVez, int *partidaEmAndamento);
+void getJogoSalvo(FILE *arquivo, char **partida, char *jogador1,  char *jogador2, int *partidaEmAndamento, char *numJogadores); //pega o jogo salvo no arquivo, e continua a partida
+int verificaQualJogadorDaVez(char **partida); //usado para continuar uma partida atual (case '3')
 void limpaBuffer(); //limpar os caracteres do buffer até \n
 char **alocaMatriz(int n, int m);
 void liberaMatriz(char **matriz, int n);
@@ -26,10 +29,13 @@ void liberaMatriz(char **matriz, int n);
 int main(){
     printf("Bem vindo ao Jogo da Velha\n\n");
     
-    char opMenu;
-    char **partida;
+    char opMenu, **partida;
     char jogador1[100], jogador2[100], numJogadores[3];
     partida = alocaMatriz(3, 3);
+    FILE *arq;
+    char nomeArq[94];
+    int partidaEmAndamento = 0; //1 se existe uma em andamento, e 0 caso contrário
+
     do{
         opMenu = menu();
 
@@ -57,13 +63,10 @@ int main(){
                 iniciaPartidaVazia(partida); //limpando o tabuleiro das possíveis partidas anteriores
                 leNomeJogadores(jogador1, jogador2, numJogadores[0]);
 
-                executarPartida(numJogadores[0], partida, jogador1,jogador2, 1);
+                executarPartida(numJogadores[0], partida, jogador1,jogador2, 1, &partidaEmAndamento);
             break;
 
             case '2': //continuar jogo salvo
-                FILE *arq;
-                char nomeArq[94];
-
                 do{
                     printf("\nDigite o nome do arquivo que o jogo está salvo: ");
                     scanf("%s", nomeArq);
@@ -76,12 +79,20 @@ int main(){
                     }
                 } while (!validaNomeArquivo(nomeArq) || arq == NULL);
                 
-                getJogoSalvo(arq);
+                getJogoSalvo(arq, partida, jogador1, jogador2, &partidaEmAndamento, &numJogadores[0]); //pega o jogo salvo no arquivo, e continua a partida
 
             break;
 
             case '3': //continuar jogo atual
-
+                if(!partidaEmAndamento)
+                    printf("\nNão existe nenhuma partida atual!\n\n");
+                else{
+                    //preciso continuar o jogo, tanto se ele tiver começado do zero (case 1), quanto se a partida tiver pegada de um arquivo salvo(case 2)
+                    if(verificaQualJogadorDaVez(partida) == 1)
+                        executarPartida(numJogadores[0], partida, jogador1, jogador2, 1, &partidaEmAndamento);
+                    else
+                        executarPartida(numJogadores[0], partida, jogador1, jogador2, 2, &partidaEmAndamento);
+                }
             break;
 
             default: //exibir ranking (opção 4 do menu)
@@ -274,46 +285,85 @@ int validaNomeArquivo(char *nomeArquivo){
     return 1;
 }
 
-int partidaDeDois(char **partida, char *jogador, int jogadorDaVez, char *outroJogador){ 
+int marcar(char **partida, int jogadorDaVez, char *comando){
+    //retorna 1 caso a marcação dê certo, e 0 caso falhe nas validações
+
+    char posicaoX, posicaoY;
+    posicaoY = comando[7]; //numero da linha
+    posicaoX = comando[8]; //numero da coluna
+    int linha, coluna;
+
+    //conversão da posição de char para um inteiro        
+    linha = charToInt(posicaoY) -1;
+    coluna = charToInt(posicaoX) -1;
+
+    //verifica se o usuario realmente digitou números de 1 a 3 para posição e se essa posicao está livre ou já foi marcada
+    if(!verificaDigito(posicaoX) || !verificaDigito(posicaoY) || !verificaPosicao(linha, coluna, partida)){
+        printf("Posições inválidas ou já marcadas! Digite apenas números de 1 até 3.\n");
+            
+        return 0;
+    }
+        
+    //se jogadorDaVez = 1, marcar com X, se jogadorDaVez = 2, marcar com O
+    if(jogadorDaVez == 1)
+        partida[linha][coluna] = 'X';
+    else
+        partida[linha][coluna] = 'O';
+
+    return 1;
+}
+
+void salvar(FILE *arquivo, char **partida, char numJogadores, int jogadorDaVez, char *jogador1, char *jogador2, char *nomeArquivo){
+    fprintf(arquivo, "%c\n", numJogadores);
+
+    fprintf(arquivo, "%s\n", jogador1);
+
+    if(numJogadores == '2')
+        fprintf(arquivo, "%s\n", jogador2);
+
+    for (int i = 0; i < 3; i++){
+        for (int j = 0; j < 3; j++){
+            if (partida[i][j] != ' ')
+                fprintf(arquivo, "%c ", partida[i][j]);
+            else
+                fprintf(arquivo, "- ");
+        }
+        fprintf(arquivo, "\n");
+    }
+
+    fprintf(arquivo, "%d", jogadorDaVez);
+
+    fclose(arquivo);
+
+    printf("Arquivo “%s” salvo com sucesso!\n", nomeArquivo);
+}
+
+int partidaDeDois(char **partida, char *jogador, int jogadorDaVez, char *outroJogador, int *partidaEmAndamento){ 
     /*retorno: 
-    1: se a partida acabou, 
+    1: se a partida acabou, ou o usuario digitou para voltar
     0: caso a partida continue normalmente,
-    2: caso o jogador tenha apenas salvado ela ou digitado um comando errado, nesse caso é a vez do mesmo jogador */
+    2: caso o jogador tenha apenas salvado a partida ou digitado um comando errado, nesse caso ainda será a vez do mesmo jogador */
     char comando[100];
     char acao[7]; //marcar, salvar ou voltar
 
     leComando(comando, acao, jogador);
     
     if(!strcmp(acao, "marcar")){
-        char posicaoX, posicaoY;
-        posicaoY = comando[7]; //numero da linha
-        posicaoX = comando[8]; //numero da coluna
-        int linha, coluna;
-
-        //conversão da posição de char para um inteiro        
-        linha = charToInt(posicaoY) -1;
-        coluna = charToInt(posicaoX) -1;
-
-        //verifica se o usuario realmente digitou números de 1 a 3 para posição e se essa posicao está livre ou já foi marcada
-        if(!verificaDigito(posicaoX) || !verificaDigito(posicaoY) || !verificaPosicao(linha, coluna, partida)){
-            printf("Posições inválidas ou já marcadas! Digite apenas números de 1 até 3.\n");
-            
-            return 2;
-        }
         
-        //se jogadorDaVez = 1, marcar com X, se jogadorDaVez = 2, marcar com O
-        if(jogadorDaVez == 1)
-            partida[linha][coluna] = 'X';
-        else
-            partida[linha][coluna] = 'O';
+        if(!marcar(partida, jogadorDaVez, comando))
+            return 2; //falhou nas validações na hora de marcar (posição já preenchida ou posição inválida)
 
         exibeJogo(partida);
         
         //se verificaPartida() retornar 0, a partida ainda não acabou, caso tenha acabado, retorna 1 e exibe uma msg de parabens ou de empate
         if(!verificaPartida(partida, jogador, jogadorDaVez)) 
             return 0;
-        else
+        else{ //fim da partida
+            printf("Digite qualquer tecla para continuar!\n");
+            limpaBuffer();
+            *partidaEmAndamento = 0;
             return 1;
+        }
 
         //implementar para aos fins das partidas, atualizar o ranking com vitória, empate e derrota de cada jogador
         //problema: o jogador que não estiver no ranking vai perder seus dados de V, E e D. O que fazer?
@@ -322,7 +372,7 @@ int partidaDeDois(char **partida, char *jogador, int jogadorDaVez, char *outroJo
     else if (!strcmp(acao, "salvar"))
     {
         FILE *arquivo;
-        char nomeArquivo[94]; //100 - 6    comando - os caracteres da acao
+        char nomeArquivo[94]; //100 - 6  =  comando - os caracteres da acao
 
         int cont = 7;
         while(comando[cont] != '\0' && cont<100){
@@ -338,40 +388,24 @@ int partidaDeDois(char **partida, char *jogador, int jogadorDaVez, char *outroJo
             return 2;
 
         arquivo = fopen(nomeArquivo, "w");
-        
-        fprintf(arquivo, "2\n");
 
-        //if para deixar ordenado no arquivo do jogo o nome do jogador 1 primeiro, e do jogador 2 embaixo
-        if(jogadorDaVez == 1)
-            fprintf(arquivo, "%s\n%s\n", jogador, outroJogador);
-        else
-            fprintf(arquivo, "%s\n%s\n", outroJogador, jogador);
-
-        for (int i = 0; i < 3; i++){
-            for (int j = 0; j < 3; j++){
-                if (partida[i][j] != ' ')
-                    fprintf(arquivo, "%c ", partida[i][j]);
-                else
-                    fprintf(arquivo, "- ");
-            }
-            fprintf(arquivo, "\n");
-        }
-
-        fprintf(arquivo, "%d", jogadorDaVez);
-
-        fclose(arquivo);
-
-        printf("Arquivo “%s” salvo com sucesso!\n", nomeArquivo);        
+        if(arquivo != NULL){
+            //if para deixar ordenado no arquivo do jogo o nome do jogador 1 primeiro, e do jogador 2 embaixo
+            if(jogadorDaVez == 1)
+                salvar(arquivo, partida, '2', jogadorDaVez, jogador, outroJogador, nomeArquivo);
+            else
+                salvar(arquivo, partida, '2', jogadorDaVez, outroJogador, jogador, nomeArquivo);
+        }        
 
         return 2;
     }
     else{ //voltar
-
-    }
-    
+        return 1;
+    }    
 }
 
-void executarPartida(char numJogadores, char **partida, char *jogador1, char *jogador2, int jogadorDaVez){
+void executarPartida(char numJogadores, char **partida, char *jogador1, char *jogador2, int jogadorDaVez, int *partidaEmAndamento){
+    *partidaEmAndamento = 1;
     exibeJogo(partida);
 
     if(numJogadores == '1'){
@@ -381,44 +415,40 @@ void executarPartida(char numJogadores, char **partida, char *jogador1, char *jo
         //jogadorDaVez:   ímpar: vez do jogador 1   par: vez do jogador 2
         int partidaFinalizada;
         if(jogadorDaVez == 1)
-            partidaFinalizada = partidaDeDois(partida, jogador1, jogadorDaVez, jogador2);
+            partidaFinalizada = partidaDeDois(partida, jogador1, jogadorDaVez, jogador2, partidaEmAndamento);
         else
-            partidaFinalizada = partidaDeDois(partida, jogador2, jogadorDaVez, jogador1);
+            partidaFinalizada = partidaDeDois(partida, jogador2, jogadorDaVez, jogador1, partidaEmAndamento);
 
         while(!partidaFinalizada || partidaFinalizada == 2){ //se o partidaDeDois retornar 2 o jogador apenas salvou a partida ou digitou algo errado
             if(!partidaFinalizada) //caso o partidaFinalizada tenha recebido 0, a rodada aconteceu normalmente e agr é a vez do outro jogador
                 jogadorDaVez++;
 
             if(jogadorDaVez % 2 == 0)
-                partidaFinalizada = partidaDeDois(partida, jogador2, 2, jogador1);
+                partidaFinalizada = partidaDeDois(partida, jogador2, 2, jogador1, partidaEmAndamento);
             else
-                partidaFinalizada = partidaDeDois(partida, jogador1, 1, jogador2);
+                partidaFinalizada = partidaDeDois(partida, jogador1, 1, jogador2, partidaEmAndamento);
         }
-
-        printf("Digite qualquer tecla para continuar!\n");
-        limpaBuffer();
     }  
 }
 
-void getJogoSalvo(FILE *arquivo){
-    int numJogadores, jogadorDaVez;
-    char jogadores[2][100], **partidaSalva;
+void getJogoSalvo(FILE *arquivo, char **partida, char *jogador1,  char *jogador2, int *partidaEmAndamento, char *numJogadores){
+    int jogadorDaVez;
 
-    partidaSalva = alocaMatriz(3, 3);
+    fscanf(arquivo, "%c\n", numJogadores);
 
-    fscanf(arquivo, "%d\n", &numJogadores);
+    fgets(jogador1, 100, arquivo);
+    jogador1[strlen(jogador1)-1] = '\0';
 
-    fgets(jogadores[0], 100, arquivo);
-    jogadores[0][strlen(jogadores[0])-1] = '\0';
-
-    fgets(jogadores[1], 100, arquivo);
-    jogadores[1][strlen(jogadores[1])-1] = '\0';
+    if(*numJogadores == '2'){
+        fgets(jogador2, 100, arquivo);
+        jogador2[strlen(jogador2)-1] = '\0';
+    }
 
     for (int i = 0; i < 3; i++){
         for (int j = 0; j < 3; j++){
-            fscanf(arquivo, "%c ", &partidaSalva[i][j]);
-            if(partidaSalva[i][j] == '-')
-                partidaSalva[i][j] = ' ';
+            fscanf(arquivo, "%c ", &partida[i][j]);
+            if(partida[i][j] == '-')
+                partida[i][j] = ' ';
         }
         //fscanf(arquivo, "\n");        
     }
@@ -427,9 +457,28 @@ void getJogoSalvo(FILE *arquivo){
     
     fclose(arquivo);
 
-    executarPartida(numJogadores, partidaSalva, jogadores[0], jogadores[1], jogadorDaVez);
+    executarPartida(*numJogadores, partida, jogador1, jogador2, jogadorDaVez, partidaEmAndamento);
+}
 
-    liberaMatriz(partidaSalva, 3);
+int verificaQualJogadorDaVez(char **partida){
+    int vezDoJogador, contX = 0, contO = 0;
+
+    for (int i = 0; i < 3; i++){
+        for (int j = 0; j < 3; j++){
+            if(partida[i][j] == 'X')
+                contX++;
+            else if(partida[i][j] == 'O')
+                contO++;
+        }        
+    }
+
+    //quando o jogador 1 e o jogador 2 já jogou o mesmo número de vezes, portanto é a vez do jogador 1
+    if(contX == contO)
+        vezDoJogador = 1;
+    else //nesse caso o jogador 1 jogou mais que o 2, então é a vez do 2° jogador
+        vezDoJogador = 2;
+    
+    return vezDoJogador;
 }
 
 void limpaBuffer(){

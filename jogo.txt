@@ -1,7 +1,7 @@
 2
 pedro
 luis
-- - O 
-X O - 
-X X - 
+- - - 
+- O - 
+X - X 
 2
