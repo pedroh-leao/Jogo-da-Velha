@@ -1,4 +1,4 @@
-//LEMBRETES PARA IMPLEMENTAR: linhas 19, 318, 378(func executarPartida)
+//LEMBRETES PARA IMPLEMENTAR: linhas 409(incluir no ranking), 477(mesma coisa da 409), 526(mesma coisa da 409)
 
 //Pedro Henrique Rabelo Leão de Oliveira - 22.1.4022
 #include <stdio.h>
@@ -18,13 +18,14 @@ int validaNomeArquivo(char *nomeArquivo);
 int marcar(char **partida, int jogadorDaVez, char *comando); //retorna 1 caso a marcação dê certo, e 0 caso falhe nas validações
 void salvar(FILE *arquivo, char **partida, char numJogadores, int jogadorDaVez, char *jogador1, char *jogador2, char *nomeArquivo);
 int partidaDeDois(char **partida, char *jogador, int jogadorDaVez, char *outroJogador, int *partidaEmAndamento); //retorna 1 se a partida acabou, 0 caso contrário, e 2 caso o jogador tenha apenas salvado ela ou digitado um comando errado
-                                            //tentar quebrar a função em mais funções ou diluir e colocar alguns comandos dela na main, tlvz criar tbm uma função para cada opção de ação
+int partidaDeUm(char **partida, char *jogador, int jogadorDaVez, int *partidaEmAndamento);//retorna 1 se a partida acabou, 0 caso contrário, e 2 caso o jogador tenha apenas salvado ela ou digitado um comando errado
 void executarPartida(char numJogadores, char **partida, char *jogador1, char *jogador2, int jogadorDaVez, int *partidaEmAndamento);
 void getJogoSalvo(FILE *arquivo, char **partida, char *jogador1,  char *jogador2, int *partidaEmAndamento, char *numJogadores); //pega o jogo salvo no arquivo, e continua a partida
 int verificaQualJogadorDaVez(char **partida); //usado para continuar uma partida atual (case '3')
 void limpaBuffer(); //limpar os caracteres do buffer até \n
 char **alocaMatriz(int n, int m);
 void liberaMatriz(char **matriz, int n);
+int jogadaDoComputador(char **partida);
 
 int main(){
     printf("Bem vindo ao Jogo da Velha\n\n");
@@ -34,6 +35,7 @@ int main(){
     partida = alocaMatriz(3, 3);
     FILE *arq;
     char nomeArq[94];
+    //variavel para dizer se tem alguma partida em andamento, quando o usuario tentar entrar no case 3
     int partidaEmAndamento = 0; //1 se existe uma em andamento, e 0 caso contrário
 
     do{
@@ -167,9 +169,14 @@ void exibeJogo(char **partida){
 }
 
 void leComando(char *comando, char *acao, char *jogador){
+    int invalido;
     do{
         printf("\n%s, digite o comando: ", jogador);
         fgets(comando, 100, stdin);
+
+        if(strlen(comando) == 100 && comando[99] != '\n') //caso o usuario tenha digitado um comando maior do que o tamanho maximo da variavel
+            limpaBuffer();
+
         comando[strlen(comando)-1] = '\0';
         printf("\n");
         
@@ -178,10 +185,20 @@ void leComando(char *comando, char *acao, char *jogador){
         }
         acao[6] = '\0';
 
-        if(strcmp(acao, "marcar") && strcmp(acao, "salvar") && strcmp(acao, "voltar")){
+        if(strcmp(acao, "marcar") && strcmp(acao, "salvar") && strcmp(acao, "voltar"))
+            invalido = 1;
+        else if((!strcmp(acao, "marcar") || !strcmp(acao, "salvar")) && comando[6] != ' ')
+            invalido = 1;
+        else if(!strcmp(acao, "marcar") && comando[9] != '\0')
+            invalido = 1;
+        else if(!strcmp(acao, "voltar") && comando[6] != '\0')
+            invalido = 1;
+        else
+            invalido = 0;
+
+        if(invalido)
             printf("Comando inválido!\n");
-        }
-    } while (strcmp(acao, "marcar") && strcmp(acao, "salvar") && strcmp(acao, "voltar")); //enquanto o comando não for nenhum desses
+    } while (invalido); //enquanto o comando estiver invalido
 }
 
 int charToInt(char c){
@@ -212,43 +229,67 @@ int verificaPartida(char **partida, char *jogador, int jogadorDaVez){
 
     if(partida[0][0] == verificador){
         if(partida[0][1] == verificador && partida[0][2] == verificador){
-            printf("Parabéns %s, você ganhou!\n", jogador);
+            if(strcmp(jogador, "computador"))
+                printf("Parabéns %s, você ganhou!\n", jogador);
+            else
+                printf("Vitória do computador!\n");
             return 1;
         }
-        else if(partida[1][0] == verificador && partida[2][0] == verificador){
-            printf("Parabéns %s, você ganhou!\n", jogador);
+        if(partida[1][0] == verificador && partida[2][0] == verificador){
+            if(strcmp(jogador, "computador"))
+                printf("Parabéns %s, você ganhou!\n", jogador);
+            else
+                printf("Vitória do computador!\n");
             return 1;
         }
-        else if(partida[1][1] == verificador && partida[2][2] == verificador){
-            printf("Parabéns %s, você ganhou!\n", jogador);
+        if(partida[1][1] == verificador && partida[2][2] == verificador){
+            if(strcmp(jogador, "computador"))
+                printf("Parabéns %s, você ganhou!\n", jogador);
+            else
+                printf("Vitória do computador!\n");
             return 1;
         }
     }
     if(partida[0][1] == verificador){
         if(partida[1][1]==verificador && partida[2][1]==verificador){
-            printf("Parabéns %s, você ganhou!\n", jogador);
+            if(strcmp(jogador, "computador"))
+                printf("Parabéns %s, você ganhou!\n", jogador);
+            else
+                printf("Vitória do computador!\n");
             return 1;
         }
     }
     if (partida[1][0] == verificador){
         if (partida[1][1]==verificador && partida[1][2]==verificador){
-            printf("Parabéns %s, você ganhou!\n", jogador);
+            if(strcmp(jogador, "computador"))
+                printf("Parabéns %s, você ganhou!\n", jogador);
+            else
+                printf("Vitória do computador!\n");
             return 1;
         }
     }
     if (partida[2][2] == verificador){
         if(partida[2][0]==verificador && partida[2][1]==verificador){
-            printf("Parabéns %s, você ganhou!\n", jogador);
+            if(strcmp(jogador, "computador"))
+                printf("Parabéns %s, você ganhou!\n", jogador);
+            else
+                printf("Vitória do computador!\n");
             return 1;
         }
-        else if(partida[0][2]==verificador && partida[1][2]==verificador){
-            printf("Parabéns %s, você ganhou!\n", jogador);
+        if(partida[0][2]==verificador && partida[1][2]==verificador){
+            if(strcmp(jogador, "computador"))
+                printf("Parabéns %s, você ganhou!\n", jogador);
+            else
+                printf("Vitória do computador!\n");
             return 1;
         }
     }
     if(partida[0][2] == verificador){
         if(partida[1][1]==verificador && partida[2][0]==verificador){
-            printf("Parabéns %s, você ganhou!\n", jogador);
+            if(strcmp(jogador, "computador"))
+                printf("Parabéns %s, você ganhou!\n", jogador);
+            else
+                printf("Vitória do computador!\n");
             return 1;
         }
     }
@@ -275,8 +316,8 @@ int validaNomeArquivo(char *nomeArquivo){
     int lengthNomeArq = strlen(nomeArquivo);
 
     //se na posição 0 for um ., é pq a pessoa nao digitou um nome pro arquivo vaĺido
-    //se nas ultimas 3 posições nao for "txt" a pessoa digitou uma extensao invalida
-    if(nomeArquivo[0] == '.' || nomeArquivo[lengthNomeArq-1] != 't' || nomeArquivo[lengthNomeArq-2] != 'x' || nomeArquivo[lengthNomeArq-3] != 't'){
+    //se nas ultimas 4 posições nao for ".txt" a pessoa digitou uma extensao invalida
+    if(nomeArquivo[0] == '.' || nomeArquivo[lengthNomeArq-1] != 't' || nomeArquivo[lengthNomeArq-2] != 'x' || nomeArquivo[lengthNomeArq-3] != 't' || nomeArquivo[lengthNomeArq-4] != '.'){
         printf("Nome inválido para arquivo ou extensão inválida (precisa ser .txt)!\n");
 
         return 0;
@@ -383,7 +424,7 @@ int partidaDeDois(char **partida, char *jogador, int jogadorDaVez, char *outroJo
         cont = 0;
 
         //se na posição 0 for um ., é pq a pessoa nao digitou um nome pro arquivo vaĺido
-        //se nas ultimas 3 posições nao for "txt" a pessoa digitou uma extensao invalida
+        //se nas ultimas 4 posições nao for ".txt" a pessoa digitou uma extensao invalida
         if(!validaNomeArquivo(nomeArquivo))
             return 2;
 
@@ -404,20 +445,110 @@ int partidaDeDois(char **partida, char *jogador, int jogadorDaVez, char *outroJo
     }    
 }
 
+int partidaDeUm(char **partida, char *jogador, int jogadorDaVez, int *partidaEmAndamento){
+    /*retorno: 
+    1: se a partida acabou, ou o usuario digitou para voltar
+    0: caso a partida continue normalmente,
+    2: caso o jogador tenha apenas salvado a partida ou digitado um comando errado, nesse caso ainda será a vez do mesmo jogador */
+    
+    if(jogadorDaVez == 1){
+        char comando[100];
+        char acao[7]; //marcar, salvar ou voltar
+
+        leComando(comando, acao, jogador);
+
+        if(!strcmp(acao, "marcar")){
+        
+            if(!marcar(partida, jogadorDaVez, comando))
+                return 2; //falhou nas validações na hora de marcar (posição já preenchida ou posição inválida)
+            
+            exibeJogo(partida);
+
+            //se verificaPartida() retornar 0, a partida ainda não acabou, caso tenha acabado, retorna 1 e exibe uma msg de parabens ou de empate
+            if(!verificaPartida(partida, jogador, jogadorDaVez)) 
+                return 0;
+            else{ //fim da partida
+                printf("Digite qualquer tecla para continuar!\n");
+                limpaBuffer();
+                *partidaEmAndamento = 0;
+                return 1;
+            }
+
+            //implementar para aos fins das partidas, atualizar o ranking com vitória, empate e derrota de cada jogador
+            //problema: o jogador que não estiver no ranking vai perder seus dados de V, E e D. O que fazer?
+
+        }
+        else if (!strcmp(acao, "salvar"))
+        {
+            FILE *arquivo;
+            char nomeArquivo[94]; //100 - 6  =  comando - os caracteres da acao
+
+            int cont = 7;
+            while(comando[cont] != '\0' && cont<100){
+                nomeArquivo[cont-7] = comando[cont];
+                cont++;
+            }
+            nomeArquivo[cont-7] = '\0';
+            cont = 0;
+
+            //se na posição 0 for um ., é pq a pessoa nao digitou um nome pro arquivo vaĺido
+            //se nas ultimas 4 posições nao for ".txt" a pessoa digitou uma extensao invalida
+            if(!validaNomeArquivo(nomeArquivo))
+                return 2;
+
+            arquivo = fopen(nomeArquivo, "w");
+
+            if(arquivo != NULL){
+                salvar(arquivo, partida, '1', jogadorDaVez, jogador, "", nomeArquivo);
+            }        
+
+            return 2;
+        }
+        else{ //voltar
+            return 1;
+        }
+    }
+    else{ //vez do computador
+        //executar função de marcar do computador, exibir partida, depois verificar se a partida acabou
+        jogadaDoComputador(partida);
+        printf("Vez do computador: \n");
+        exibeJogo(partida);
+            
+        //se verificaPartida() retornar 0, a partida ainda não acabou, caso tenha acabado, retorna 1 e exibe uma msg de parabens ou de empate
+        if(!verificaPartida(partida, "computador", jogadorDaVez)) 
+            return 0;
+        else{ //fim da partida
+            printf("Digite qualquer tecla para continuar!\n");
+            limpaBuffer();
+            *partidaEmAndamento = 0;
+            return 1;
+        }
+
+        //implementar para aos fins das partidas, atualizar o ranking com vitória, empate e derrota de cada jogador
+        //problema: o jogador que não estiver no ranking vai perder seus dados de V, E e D. O que fazer?
+    }
+}
+
 void executarPartida(char numJogadores, char **partida, char *jogador1, char *jogador2, int jogadorDaVez, int *partidaEmAndamento){
     *partidaEmAndamento = 1;
     exibeJogo(partida);
+    int partidaFinalizada = 2; //nao posso começar inicializar com 0, pois se não ja pularia a vez do jogador atual ao entrar a primeira vez no while
 
-    if(numJogadores == '1'){
-        //programar função para jogar contra o bot do computador
+    if(numJogadores == '1'){ //1 jogador
+        //jogadorDaVez:   ímpar: vez do jogador 1   par: vez do jogador 2        
+
+        while(!partidaFinalizada || partidaFinalizada == 2){ //se o partidaDeUm retornar 2 o jogador apenas salvou a partida ou digitou algo errado
+            if(!partidaFinalizada) //caso o partidaFinalizada tenha recebido 0, a rodada aconteceu normalmente e agr é a vez do outro jogador
+                jogadorDaVez++;
+
+            if(jogadorDaVez % 2 == 0)
+                partidaFinalizada = partidaDeUm(partida, jogador1, 2, partidaEmAndamento);
+            else
+                partidaFinalizada = partidaDeUm(partida, jogador1, 1, partidaEmAndamento);
+        }
     }   
     else{ //2 jogadores 
-        //jogadorDaVez:   ímpar: vez do jogador 1   par: vez do jogador 2
-        int partidaFinalizada;
-        if(jogadorDaVez == 1)
-            partidaFinalizada = partidaDeDois(partida, jogador1, jogadorDaVez, jogador2, partidaEmAndamento);
-        else
-            partidaFinalizada = partidaDeDois(partida, jogador2, jogadorDaVez, jogador1, partidaEmAndamento);
+        //jogadorDaVez:   ímpar: vez do jogador 1   par: vez do jogador 2        
 
         while(!partidaFinalizada || partidaFinalizada == 2){ //se o partidaDeDois retornar 2 o jogador apenas salvou a partida ou digitou algo errado
             if(!partidaFinalizada) //caso o partidaFinalizada tenha recebido 0, a rodada aconteceu normalmente e agr é a vez do outro jogador
@@ -503,4 +634,392 @@ void liberaMatriz(char **matriz, int n){
         free(matriz[i]);
     }
     free(matriz);    
+}
+
+int jogadaDoComputador(char **partida){
+    //verifica se tem alguma forma do computador ganhar:
+    int preenchidasLinha = 0, preenchidasColuna = 0;
+    for(int i=0; i<3; i++){
+        if(partida[0][i] == 'O'){
+            preenchidasLinha++;
+        }
+        if(partida[i][0] == 'O'){
+            preenchidasColuna++;
+        }
+    }
+    if(preenchidasLinha == 2){ //se tiver duas marcações de O na linha 0
+        if(partida[0][0] == 'O' && partida[0][1] == 'O'){
+            if(verificaPosicao(0, 2, partida)){
+                partida[0][2] = 'O';
+                return 1;
+            }
+        }
+        else if(partida[0][1] == 'O' && partida[0][2] == 'O'){
+            if(verificaPosicao(0, 0, partida)){
+                partida[0][0] = 'O';
+                return 1;
+            }
+        }
+        else if(partida[0][0] == 'O' && partida[0][2] == 'O'){
+            if(verificaPosicao(0, 1, partida)){
+                partida[0][1] = 'O';
+                return 1;
+            }
+        }
+    }
+    else if(preenchidasColuna == 2){ //se tiver duas marcações de O na coluna 0
+        if(partida[0][0] == 'O' && partida[1][0] == 'O'){
+            if(verificaPosicao(2, 0, partida)){
+                partida[2][0] = 'O';
+                return 1;
+            }
+        }
+        else if(partida[1][0] == 'O' && partida[2][0] == 'O'){
+            if(verificaPosicao(0, 0, partida)){
+                partida[0][0] = 'O';
+                return 1;
+            }
+        }
+        else if(partida[0][0] == 'O' && partida[2][0] == 'O'){
+            if(verificaPosicao(1, 0, partida)){
+                partida[1][0] = 'O';
+                return 1;
+            }
+        }
+    }
+
+    preenchidasLinha = 0, preenchidasColuna = 0;
+    for(int i=0; i<3; i++){
+        if(partida[1][i] == 'O'){
+            preenchidasLinha++;
+        }
+        if(partida[i][1] == 'O'){
+            preenchidasColuna++;
+        }
+    }
+    if(preenchidasLinha == 2){ //se tiver duas marcações de O na linha 1
+        if(partida[1][0] == 'O' && partida[1][1] == 'O'){
+            if(verificaPosicao(1, 2, partida)){
+                partida[1][2] = 'O';
+                return 1;
+            }
+        }
+        else if(partida[1][1] == 'O' && partida[1][2] == 'O'){
+            if(verificaPosicao(1, 0, partida)){
+                partida[1][0] = 'O';
+                return 1;
+            }
+        }
+        else if(partida[1][0] == 'O' && partida[1][2] == 'O'){
+            if(verificaPosicao(1, 1, partida)){
+                partida[1][1] = 'O';
+                return 1;
+            }
+        }
+    }
+    else if(preenchidasColuna == 2){ //se tiver duas marcações de O na coluna 1
+        if(partida[0][1] == 'O' && partida[1][1] == 'O'){
+            if(verificaPosicao(2, 1, partida)){
+                partida[2][1] = 'O';
+                return 1;
+            }
+        }
+        else if(partida[1][1] == 'O' && partida[2][1] == 'O'){
+            if(verificaPosicao(0, 1, partida)){
+                partida[0][1] = 'O';
+                return 1;
+            }
+        }
+        else if(partida[0][1] == 'O' && partida[2][1] == 'O'){
+            if(verificaPosicao(1, 1, partida)){
+                partida[1][1] = 'O';
+                return 1;
+            }
+        }
+    }
+
+    preenchidasLinha = 0, preenchidasColuna = 0;
+    for(int i=0; i<3; i++){
+        if(partida[2][i] == 'O'){
+            preenchidasLinha++;
+        }
+        if(partida[i][2] == 'O'){
+            preenchidasColuna++;
+        }
+    }
+    if(preenchidasLinha == 2){ //se tiver duas marcações de O na linha 2
+        if(partida[2][0] == 'O' && partida[2][1] == 'O'){
+            if(verificaPosicao(2, 2, partida)){
+                partida[2][2] = 'O';
+                return 1;
+            }
+        }
+        else if(partida[2][1] == 'O' && partida[2][2] == 'O'){
+            if(verificaPosicao(2, 0, partida)){
+                partida[2][0] = 'O';
+                return 1;
+            }
+        }
+        else if(partida[2][0] == 'O' && partida[2][2] == 'O'){
+            if(verificaPosicao(2, 1, partida)){
+                partida[2][1] = 'O';
+                return 1;
+            }
+        }
+    }
+    else if(preenchidasColuna == 2){ //se tiver duas marcações de O na coluna 2
+        if(partida[0][2] == 'O' && partida[1][2] == 'O'){
+            if(verificaPosicao(2, 2, partida)){
+                partida[2][2] = 'O';
+                return 1;
+            }
+        }
+        else if(partida[1][2] == 'O' && partida[2][2] == 'O'){
+            if(verificaPosicao(0, 2, partida)){
+                partida[0][2] = 'O';
+                return 1;
+            }
+        }
+        else if(partida[0][2] == 'O' && partida[2][2] == 'O'){
+            if(verificaPosicao(1, 2, partida)){
+                partida[1][2] = 'O';
+                return 1;
+            }
+        }
+    }
+
+    //caso tenha 2 marcações de O na diagonal principal:
+    if(partida[0][0] == 'O' && partida[1][1] == 'O'){
+        if(verificaPosicao(2, 2, partida)){
+            partida[2][2] = 'O';
+            return 1;
+        }
+    }
+    else if(partida[0][0] == 'O' && partida[2][2] == 'O'){
+        if(verificaPosicao(1, 1, partida)){
+            partida[1][1] = 'O';
+            return 1;
+        }
+    }
+    else if(partida[1][1] == 'O' && partida[2][2] == 'O'){
+        if(verificaPosicao(0, 0, partida)){
+            partida[0][0] = 'O';
+            return 1;
+        }
+    }
+
+    //caso tenha 2 marcações de O na diagonal secundaria:
+    if(partida[0][2] == 'O' && partida[1][1] == 'O'){
+        if(verificaPosicao(2, 0, partida)){
+            partida[2][0] = 'O';
+            return 1;
+        }
+    }
+    else if(partida[0][2] == 'O' && partida[2][0] == 'O'){
+        if(verificaPosicao(1, 1, partida)){
+            partida[1][1] = 'O';
+            return 1;
+        }
+    }
+    else if(partida[1][1] == 'O' && partida[2][0] == 'O'){
+        if(verificaPosicao(0, 2, partida)){
+            partida[0][2] = 'O';
+            return 1;
+        }
+    }
+
+    //verifica se tem alguma forma do jogador ganhar na proxima jogada:
+    preenchidasLinha = 0, preenchidasColuna = 0;
+    for(int i=0; i<3; i++){
+        if(partida[0][i] == 'X'){
+            preenchidasLinha++;
+        }
+        if(partida[i][0] == 'X'){
+            preenchidasColuna++;
+        }
+    }
+    if(preenchidasLinha == 2){ //se tiver duas marcações de X na linha 0
+        if(partida[0][0] == 'X' && partida[0][1] == 'X'){
+            if(verificaPosicao(0, 2, partida)){
+                partida[0][2] = 'O';
+                return 1;
+            }
+        }
+        else if(partida[0][1] == 'X' && partida[0][2] == 'X'){
+            if(verificaPosicao(0, 0, partida)){
+                partida[0][0] = 'O';
+                return 1;
+            }
+        }
+        else if(partida[0][0] == 'X' && partida[0][2] == 'X'){
+            if(verificaPosicao(0, 1, partida)){
+                partida[0][1] = 'O';
+                return 1;
+            }
+        }
+    }
+    else if(preenchidasColuna == 2){ //se tiver duas marcações de X na coluna 0
+        if(partida[0][0] == 'X' && partida[1][0] == 'X'){
+            if(verificaPosicao(2, 0, partida)){
+                partida[2][0] = 'O';
+                return 1;
+            }
+        }
+        else if(partida[1][0] == 'X' && partida[2][0] == 'X'){
+            if(verificaPosicao(0, 0, partida)){
+                partida[0][0] = 'O';
+                return 1;
+            }
+        }
+        else if(partida[0][0] == 'X' && partida[2][0] == 'X'){
+            if(verificaPosicao(1, 0, partida)){
+                partida[1][0] = 'O';
+                return 1;
+            }
+        }
+    }
+
+    preenchidasLinha = 0, preenchidasColuna = 0;
+    for(int i=0; i<3; i++){
+        if(partida[1][i] == 'X'){
+            preenchidasLinha++;
+        }
+        if(partida[i][1] == 'X'){
+            preenchidasColuna++;
+        }
+    }
+    if(preenchidasLinha == 2){ //se tiver duas marcações de X na linha 1
+        if(partida[1][0] == 'X' && partida[1][1] == 'X'){
+            if(verificaPosicao(1, 2, partida)){
+                partida[1][2] = 'O';
+                return 1;
+            }
+        }
+        else if(partida[1][1] == 'X' && partida[1][2] == 'X'){
+            if(verificaPosicao(1, 0, partida)){
+                partida[1][0] = 'O';
+                return 1;
+            }
+        }
+        else if(partida[1][0] == 'X' && partida[1][2] == 'X'){
+            if(verificaPosicao(1, 1, partida)){
+                partida[1][1] = 'O';
+                return 1;
+            }
+        }
+    }
+    else if(preenchidasColuna == 2){ //se tiver duas marcações de X na coluna 1
+        if(partida[0][1] == 'X' && partida[1][1] == 'X'){
+            if(verificaPosicao(2, 1, partida)){
+                partida[2][1] = 'O';
+                return 1;
+            }
+        }
+        else if(partida[1][1] == 'X' && partida[2][1] == 'X'){
+            if(verificaPosicao(0, 1, partida)){
+                partida[0][1] = 'O';
+                return 1;
+            }
+        }
+        else if(partida[0][1] == 'X' && partida[2][1] == 'X'){
+            if(verificaPosicao(1, 1, partida)){
+                partida[1][1] = 'O';
+                return 1;
+            }
+        }
+    }
+
+    preenchidasLinha = 0, preenchidasColuna = 0;
+    for(int i=0; i<3; i++){
+        if(partida[2][i] == 'X'){
+            preenchidasLinha++;
+        }
+        if(partida[i][2] == 'X'){
+            preenchidasColuna++;
+        }
+    }
+    if(preenchidasLinha == 2){ //se tiver duas marcações de X na linha 2
+        if(partida[2][0] == 'X' && partida[2][1] == 'X'){
+            if(verificaPosicao(2, 2, partida)){
+                partida[2][2] = 'O';
+                return 1;
+            }
+        }
+        else if(partida[2][1] == 'X' && partida[2][2] == 'X'){
+            if(verificaPosicao(2, 0, partida)){
+                partida[2][0] = 'O';
+                return 1;
+            }
+        }
+        else if(partida[2][0] == 'X' && partida[2][2] == 'X'){
+            if(verificaPosicao(2, 1, partida)){
+                partida[2][1] = 'O';
+                return 1;
+            }
+        }
+    }
+    else if(preenchidasColuna == 2){ //se tiver duas marcações de X na coluna 2
+        if(partida[0][2] == 'X' && partida[1][2] == 'X'){
+            if(verificaPosicao(2, 2, partida)){
+                partida[2][2] = 'O';
+                return 1;
+            }
+        }
+        else if(partida[1][2] == 'X' && partida[2][2] == 'X'){
+            if(verificaPosicao(0, 2, partida)){
+                partida[0][2] = 'O';
+                return 1;
+            }
+        }
+        else if(partida[0][2] == 'X' && partida[2][2] == 'X'){
+            if(verificaPosicao(1, 2, partida)){
+                partida[1][2] = 'O';
+                return 1;
+            }
+        }
+    }
+
+    //caso tenha 2 marcações de X na diagonal principal:
+    if(partida[0][0] == 'X' && partida[1][1] == 'X'){
+        if(verificaPosicao(2, 2, partida)){
+            partida[2][2] = 'O';
+            return 1;
+        }
+    }
+    else if(partida[0][0] == 'X' && partida[2][2] == 'X'){
+        if(verificaPosicao(1, 1, partida)){
+            partida[1][1] = 'O';
+            return 1;
+        }
+    }
+    else if(partida[1][1] == 'X' && partida[2][2] == 'X'){
+        if(verificaPosicao(0, 0, partida)){
+            partida[0][0] = 'O';
+            return 1;
+        }
+    }
+
+    //caso tenha 2 marcações de X na diagonal secundaria:
+    if(partida[0][2] == 'X' && partida[1][1] == 'X'){
+        if(verificaPosicao(2, 0, partida)){
+            partida[2][0] = 'O';
+            return 1;
+        }
+    }
+    else if(partida[0][2] == 'X' && partida[2][0] == 'X'){
+        if(verificaPosicao(1, 1, partida)){
+            partida[1][1] = 'O';
+            return 1;
+        }
+    }
+    else if(partida[1][1] == 'X' && partida[2][0] == 'X'){
+        if(verificaPosicao(0, 2, partida)){
+            partida[0][2] = 'O';
+            return 1;
+        }
+    }
+
+    //a partir daqui não existe nenhuma forma do jogador ganhar na proxima jogada
+    //verificar qual a melhor jogada pro bot
+    
 }
