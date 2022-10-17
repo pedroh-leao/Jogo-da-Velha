@@ -637,389 +637,423 @@ void liberaMatriz(char **matriz, int n){
 }
 
 int jogadaDoComputador(char **partida){
-    //verifica se tem alguma forma do computador ganhar:
-    int preenchidasLinha = 0, preenchidasColuna = 0;
-    for(int i=0; i<3; i++){
-        if(partida[0][i] == 'O'){
-            preenchidasLinha++;
-        }
-        if(partida[i][0] == 'O'){
-            preenchidasColuna++;
+    int posicoesPreenchidas = 0;
+    for(int i = 0; i<3; i++){
+        for(int j=0; j<3; j++){
+            if(partida[i][j] != ' ')
+                posicoesPreenchidas++;
         }
     }
-    if(preenchidasLinha == 2){ //se tiver duas marcações de O na linha 0
+
+    if(posicoesPreenchidas == 1){//só aconteceu a primeira jogada
+        if(partida[0][0] == 'X' || partida[0][2] == 'X' || partida[2][0] == 'X' || partida[2][2] == 'X'){
+            partida[1][1] = 'O';
+            return 1;
+        }
+        else if(partida[1][1] == 'X'){
+            partida[0][0] = 'O';
+            return 1;
+        }
+        else if(partida[0][1] == 'X' || partida[1][0] == 'X' || partida[1][2] == 'X' || partida[2][1] == 'X'){
+            partida[1][1] = 'O';
+            return 1;
+        }
+    }
+    if(posicoesPreenchidas >= 3){ //depois de 4 jogadas(2 de cada), na 5 o jogador já tem possibilidade de ganhar
+        //verifica se tem alguma forma do computador ganhar:
+        //se tiver duas marcações de O na linha 0
         if(partida[0][0] == 'O' && partida[0][1] == 'O'){
             if(verificaPosicao(0, 2, partida)){
                 partida[0][2] = 'O';
                 return 1;
             }
         }
-        else if(partida[0][1] == 'O' && partida[0][2] == 'O'){
+        if(partida[0][1] == 'O' && partida[0][2] == 'O'){
             if(verificaPosicao(0, 0, partida)){
                 partida[0][0] = 'O';
                 return 1;
             }
         }
-        else if(partida[0][0] == 'O' && partida[0][2] == 'O'){
+        if(partida[0][0] == 'O' && partida[0][2] == 'O'){
             if(verificaPosicao(0, 1, partida)){
                 partida[0][1] = 'O';
                 return 1;
             }
         }
-    }
-    else if(preenchidasColuna == 2){ //se tiver duas marcações de O na coluna 0
+        //se tiver duas marcações de O na coluna 0
         if(partida[0][0] == 'O' && partida[1][0] == 'O'){
             if(verificaPosicao(2, 0, partida)){
                 partida[2][0] = 'O';
                 return 1;
             }
         }
-        else if(partida[1][0] == 'O' && partida[2][0] == 'O'){
+        if(partida[1][0] == 'O' && partida[2][0] == 'O'){
             if(verificaPosicao(0, 0, partida)){
                 partida[0][0] = 'O';
                 return 1;
             }
         }
-        else if(partida[0][0] == 'O' && partida[2][0] == 'O'){
+        if(partida[0][0] == 'O' && partida[2][0] == 'O'){
             if(verificaPosicao(1, 0, partida)){
                 partida[1][0] = 'O';
                 return 1;
             }
         }
-    }
 
-    preenchidasLinha = 0, preenchidasColuna = 0;
-    for(int i=0; i<3; i++){
-        if(partida[1][i] == 'O'){
-            preenchidasLinha++;
-        }
-        if(partida[i][1] == 'O'){
-            preenchidasColuna++;
-        }
-    }
-    if(preenchidasLinha == 2){ //se tiver duas marcações de O na linha 1
+        //se tiver duas marcações de O na linha 1
         if(partida[1][0] == 'O' && partida[1][1] == 'O'){
             if(verificaPosicao(1, 2, partida)){
                 partida[1][2] = 'O';
                 return 1;
             }
         }
-        else if(partida[1][1] == 'O' && partida[1][2] == 'O'){
+        if(partida[1][1] == 'O' && partida[1][2] == 'O'){
             if(verificaPosicao(1, 0, partida)){
                 partida[1][0] = 'O';
                 return 1;
             }
         }
-        else if(partida[1][0] == 'O' && partida[1][2] == 'O'){
+        if(partida[1][0] == 'O' && partida[1][2] == 'O'){
             if(verificaPosicao(1, 1, partida)){
                 partida[1][1] = 'O';
                 return 1;
             }
         }
-    }
-    else if(preenchidasColuna == 2){ //se tiver duas marcações de O na coluna 1
+        //se tiver duas marcações de O na coluna 1
         if(partida[0][1] == 'O' && partida[1][1] == 'O'){
             if(verificaPosicao(2, 1, partida)){
                 partida[2][1] = 'O';
                 return 1;
             }
         }
-        else if(partida[1][1] == 'O' && partida[2][1] == 'O'){
+        if(partida[1][1] == 'O' && partida[2][1] == 'O'){
             if(verificaPosicao(0, 1, partida)){
                 partida[0][1] = 'O';
                 return 1;
             }
         }
-        else if(partida[0][1] == 'O' && partida[2][1] == 'O'){
+        if(partida[0][1] == 'O' && partida[2][1] == 'O'){
             if(verificaPosicao(1, 1, partida)){
                 partida[1][1] = 'O';
                 return 1;
             }
         }
-    }
 
-    preenchidasLinha = 0, preenchidasColuna = 0;
-    for(int i=0; i<3; i++){
-        if(partida[2][i] == 'O'){
-            preenchidasLinha++;
-        }
-        if(partida[i][2] == 'O'){
-            preenchidasColuna++;
-        }
-    }
-    if(preenchidasLinha == 2){ //se tiver duas marcações de O na linha 2
+        //se tiver duas marcações de O na linha 2
         if(partida[2][0] == 'O' && partida[2][1] == 'O'){
             if(verificaPosicao(2, 2, partida)){
                 partida[2][2] = 'O';
                 return 1;
             }
         }
-        else if(partida[2][1] == 'O' && partida[2][2] == 'O'){
+        if(partida[2][1] == 'O' && partida[2][2] == 'O'){
             if(verificaPosicao(2, 0, partida)){
                 partida[2][0] = 'O';
                 return 1;
             }
         }
-        else if(partida[2][0] == 'O' && partida[2][2] == 'O'){
+        if(partida[2][0] == 'O' && partida[2][2] == 'O'){
             if(verificaPosicao(2, 1, partida)){
                 partida[2][1] = 'O';
                 return 1;
             }
         }
-    }
-    else if(preenchidasColuna == 2){ //se tiver duas marcações de O na coluna 2
+        //se tiver duas marcações de O na coluna 2
         if(partida[0][2] == 'O' && partida[1][2] == 'O'){
             if(verificaPosicao(2, 2, partida)){
                 partida[2][2] = 'O';
                 return 1;
             }
         }
-        else if(partida[1][2] == 'O' && partida[2][2] == 'O'){
+        if(partida[1][2] == 'O' && partida[2][2] == 'O'){
             if(verificaPosicao(0, 2, partida)){
                 partida[0][2] = 'O';
                 return 1;
             }
         }
-        else if(partida[0][2] == 'O' && partida[2][2] == 'O'){
+        if(partida[0][2] == 'O' && partida[2][2] == 'O'){
             if(verificaPosicao(1, 2, partida)){
                 partida[1][2] = 'O';
                 return 1;
             }
         }
-    }
 
-    //caso tenha 2 marcações de O na diagonal principal:
-    if(partida[0][0] == 'O' && partida[1][1] == 'O'){
-        if(verificaPosicao(2, 2, partida)){
-            partida[2][2] = 'O';
-            return 1;
+        //caso tenha 2 marcações de O na diagonal principal:
+        if(partida[0][0] == 'O' && partida[1][1] == 'O'){
+            if(verificaPosicao(2, 2, partida)){
+                partida[2][2] = 'O';
+                return 1;
+            }
         }
-    }
-    else if(partida[0][0] == 'O' && partida[2][2] == 'O'){
-        if(verificaPosicao(1, 1, partida)){
-            partida[1][1] = 'O';
-            return 1;
+        if(partida[0][0] == 'O' && partida[2][2] == 'O'){
+            if(verificaPosicao(1, 1, partida)){
+                partida[1][1] = 'O';
+                return 1;
+            }
         }
-    }
-    else if(partida[1][1] == 'O' && partida[2][2] == 'O'){
-        if(verificaPosicao(0, 0, partida)){
-            partida[0][0] = 'O';
-            return 1;
+        if(partida[1][1] == 'O' && partida[2][2] == 'O'){
+            if(verificaPosicao(0, 0, partida)){
+                partida[0][0] = 'O';
+                return 1;
+            }
         }
-    }
 
-    //caso tenha 2 marcações de O na diagonal secundaria:
-    if(partida[0][2] == 'O' && partida[1][1] == 'O'){
-        if(verificaPosicao(2, 0, partida)){
-            partida[2][0] = 'O';
-            return 1;
+        //caso tenha 2 marcações de O na diagonal secundaria:
+        if(partida[0][2] == 'O' && partida[1][1] == 'O'){
+            if(verificaPosicao(2, 0, partida)){
+                partida[2][0] = 'O';
+                return 1;
+            }
         }
-    }
-    else if(partida[0][2] == 'O' && partida[2][0] == 'O'){
-        if(verificaPosicao(1, 1, partida)){
-            partida[1][1] = 'O';
-            return 1;
+        if(partida[0][2] == 'O' && partida[2][0] == 'O'){
+            if(verificaPosicao(1, 1, partida)){
+                partida[1][1] = 'O';
+                return 1;
+            }
         }
-    }
-    else if(partida[1][1] == 'O' && partida[2][0] == 'O'){
-        if(verificaPosicao(0, 2, partida)){
-            partida[0][2] = 'O';
-            return 1;
+        if(partida[1][1] == 'O' && partida[2][0] == 'O'){
+            if(verificaPosicao(0, 2, partida)){
+                partida[0][2] = 'O';
+                return 1;
+            }
         }
-    }
 
-    //verifica se tem alguma forma do jogador ganhar na proxima jogada:
-    preenchidasLinha = 0, preenchidasColuna = 0;
-    for(int i=0; i<3; i++){
-        if(partida[0][i] == 'X'){
-            preenchidasLinha++;
-        }
-        if(partida[i][0] == 'X'){
-            preenchidasColuna++;
-        }
-    }
-    if(preenchidasLinha == 2){ //se tiver duas marcações de X na linha 0
+        //verifica se tem alguma forma do jogador ganhar na proxima jogada:
+        //se tiver duas marcações de X na linha 0
         if(partida[0][0] == 'X' && partida[0][1] == 'X'){
             if(verificaPosicao(0, 2, partida)){
                 partida[0][2] = 'O';
                 return 1;
             }
         }
-        else if(partida[0][1] == 'X' && partida[0][2] == 'X'){
+        if(partida[0][1] == 'X' && partida[0][2] == 'X'){
             if(verificaPosicao(0, 0, partida)){
                 partida[0][0] = 'O';
                 return 1;
             }
         }
-        else if(partida[0][0] == 'X' && partida[0][2] == 'X'){
+        if(partida[0][0] == 'X' && partida[0][2] == 'X'){
             if(verificaPosicao(0, 1, partida)){
                 partida[0][1] = 'O';
                 return 1;
             }
         }
-    }
-    else if(preenchidasColuna == 2){ //se tiver duas marcações de X na coluna 0
+        //se tiver duas marcações de X na coluna 0
         if(partida[0][0] == 'X' && partida[1][0] == 'X'){
             if(verificaPosicao(2, 0, partida)){
                 partida[2][0] = 'O';
                 return 1;
             }
         }
-        else if(partida[1][0] == 'X' && partida[2][0] == 'X'){
+        if(partida[1][0] == 'X' && partida[2][0] == 'X'){
             if(verificaPosicao(0, 0, partida)){
                 partida[0][0] = 'O';
                 return 1;
             }
         }
-        else if(partida[0][0] == 'X' && partida[2][0] == 'X'){
+        if(partida[0][0] == 'X' && partida[2][0] == 'X'){
             if(verificaPosicao(1, 0, partida)){
                 partida[1][0] = 'O';
                 return 1;
             }
         }
-    }
 
-    preenchidasLinha = 0, preenchidasColuna = 0;
-    for(int i=0; i<3; i++){
-        if(partida[1][i] == 'X'){
-            preenchidasLinha++;
-        }
-        if(partida[i][1] == 'X'){
-            preenchidasColuna++;
-        }
-    }
-    if(preenchidasLinha == 2){ //se tiver duas marcações de X na linha 1
+        //se tiver duas marcações de X na linha 1
         if(partida[1][0] == 'X' && partida[1][1] == 'X'){
             if(verificaPosicao(1, 2, partida)){
                 partida[1][2] = 'O';
                 return 1;
             }
         }
-        else if(partida[1][1] == 'X' && partida[1][2] == 'X'){
+        if(partida[1][1] == 'X' && partida[1][2] == 'X'){
             if(verificaPosicao(1, 0, partida)){
                 partida[1][0] = 'O';
                 return 1;
             }
         }
-        else if(partida[1][0] == 'X' && partida[1][2] == 'X'){
+        if(partida[1][0] == 'X' && partida[1][2] == 'X'){
             if(verificaPosicao(1, 1, partida)){
                 partida[1][1] = 'O';
                 return 1;
             }
         }
-    }
-    else if(preenchidasColuna == 2){ //se tiver duas marcações de X na coluna 1
+        //se tiver duas marcações de X na coluna 1
         if(partida[0][1] == 'X' && partida[1][1] == 'X'){
             if(verificaPosicao(2, 1, partida)){
                 partida[2][1] = 'O';
                 return 1;
             }
         }
-        else if(partida[1][1] == 'X' && partida[2][1] == 'X'){
+        if(partida[1][1] == 'X' && partida[2][1] == 'X'){
             if(verificaPosicao(0, 1, partida)){
                 partida[0][1] = 'O';
                 return 1;
             }
         }
-        else if(partida[0][1] == 'X' && partida[2][1] == 'X'){
+        if(partida[0][1] == 'X' && partida[2][1] == 'X'){
             if(verificaPosicao(1, 1, partida)){
                 partida[1][1] = 'O';
                 return 1;
             }
         }
-    }
 
-    preenchidasLinha = 0, preenchidasColuna = 0;
-    for(int i=0; i<3; i++){
-        if(partida[2][i] == 'X'){
-            preenchidasLinha++;
-        }
-        if(partida[i][2] == 'X'){
-            preenchidasColuna++;
-        }
-    }
-    if(preenchidasLinha == 2){ //se tiver duas marcações de X na linha 2
+        //se tiver duas marcações de X na linha 2
         if(partida[2][0] == 'X' && partida[2][1] == 'X'){
             if(verificaPosicao(2, 2, partida)){
                 partida[2][2] = 'O';
                 return 1;
             }
         }
-        else if(partida[2][1] == 'X' && partida[2][2] == 'X'){
+        if(partida[2][1] == 'X' && partida[2][2] == 'X'){
             if(verificaPosicao(2, 0, partida)){
                 partida[2][0] = 'O';
                 return 1;
             }
         }
-        else if(partida[2][0] == 'X' && partida[2][2] == 'X'){
+        if(partida[2][0] == 'X' && partida[2][2] == 'X'){
             if(verificaPosicao(2, 1, partida)){
                 partida[2][1] = 'O';
                 return 1;
             }
         }
-    }
-    else if(preenchidasColuna == 2){ //se tiver duas marcações de X na coluna 2
+        //se tiver duas marcações de X na coluna 2
         if(partida[0][2] == 'X' && partida[1][2] == 'X'){
             if(verificaPosicao(2, 2, partida)){
                 partida[2][2] = 'O';
                 return 1;
             }
         }
-        else if(partida[1][2] == 'X' && partida[2][2] == 'X'){
+        if(partida[1][2] == 'X' && partida[2][2] == 'X'){
             if(verificaPosicao(0, 2, partida)){
                 partida[0][2] = 'O';
                 return 1;
             }
         }
-        else if(partida[0][2] == 'X' && partida[2][2] == 'X'){
+        if(partida[0][2] == 'X' && partida[2][2] == 'X'){
             if(verificaPosicao(1, 2, partida)){
                 partida[1][2] = 'O';
                 return 1;
             }
         }
-    }
 
-    //caso tenha 2 marcações de X na diagonal principal:
-    if(partida[0][0] == 'X' && partida[1][1] == 'X'){
-        if(verificaPosicao(2, 2, partida)){
-            partida[2][2] = 'O';
-            return 1;
+        //caso tenha 2 marcações de X na diagonal principal:
+        if(partida[0][0] == 'X' && partida[1][1] == 'X'){
+            if(verificaPosicao(2, 2, partida)){
+                partida[2][2] = 'O';
+                return 1;
+            }
         }
-    }
-    else if(partida[0][0] == 'X' && partida[2][2] == 'X'){
-        if(verificaPosicao(1, 1, partida)){
-            partida[1][1] = 'O';
-            return 1;
+        if(partida[0][0] == 'X' && partida[2][2] == 'X'){
+            if(verificaPosicao(1, 1, partida)){
+                partida[1][1] = 'O';
+                return 1;
+            }
         }
-    }
-    else if(partida[1][1] == 'X' && partida[2][2] == 'X'){
-        if(verificaPosicao(0, 0, partida)){
-            partida[0][0] = 'O';
-            return 1;
+        if(partida[1][1] == 'X' && partida[2][2] == 'X'){
+            if(verificaPosicao(0, 0, partida)){
+                partida[0][0] = 'O';
+                return 1;
+            }
         }
-    }
 
-    //caso tenha 2 marcações de X na diagonal secundaria:
-    if(partida[0][2] == 'X' && partida[1][1] == 'X'){
+        //caso tenha 2 marcações de X na diagonal secundaria:
+        if(partida[0][2] == 'X' && partida[1][1] == 'X'){
+            if(verificaPosicao(2, 0, partida)){
+                partida[2][0] = 'O';
+                return 1;
+            }
+        }
+        if(partida[0][2] == 'X' && partida[2][0] == 'X'){
+            if(verificaPosicao(1, 1, partida)){
+                partida[1][1] = 'O';
+                return 1;
+            }
+        }
+        if(partida[1][1] == 'X' && partida[2][0] == 'X'){
+            if(verificaPosicao(0, 2, partida)){
+                partida[0][2] = 'O';
+                return 1;
+            }
+        }
+    }
+    //a partir daqui não existe nenhuma forma do jogador ganhar na proxima jogada
+    //verificando qual a melhor jogada pro computador
+    if(partida[1][1] == 'X' && partida[2][2] == 'X'){
         if(verificaPosicao(2, 0, partida)){
             partida[2][0] = 'O';
             return 1;
         }
-    }
-    else if(partida[0][2] == 'X' && partida[2][0] == 'X'){
-        if(verificaPosicao(1, 1, partida)){
-            partida[1][1] = 'O';
+    }    
+    if((partida[0][0] == 'X' && partida[2][2] == 'X') || (partida[0][2] == 'X' && partida[2][0] == 'X')){
+        if(verificaPosicao(0, 1, partida)){
+            partida[0][1] = 'O';
             return 1;
         }
     }
-    else if(partida[1][1] == 'X' && partida[2][0] == 'X'){
-        if(verificaPosicao(0, 2, partida)){
-            partida[0][2] = 'O';
+    if(partida[0][0] == 'X'){
+        if(partida[2][1] == 'X'){
+            partida[1][2] = 'O';
+            return 1;
+        }
+        if(partida[1][2] == 'X'){
+            partida[2][1] = 'O';
+            return 1;
+        }
+    }
+    if(partida[0][2] == 'X'){
+        if(partida[2][1] == 'X'){
+            partida[1][0] = 'O';
+            return 1;
+        }
+        if(partida[1][0] == 'X'){
+            partida[2][1] = 'O';
+            return 1;
+        }
+    }
+    if(partida[2][2] == 'X'){
+        if(partida[0][1] == 'X'){
+            partida[1][0] = 'O';
+            return 1;
+        }
+        if(partida[1][0] == 'X'){
+            partida[0][1] = 'O';
+            return 1;
+        }
+    }
+    if(partida[2][0] == 'X'){
+        if(partida[0][1] == 'X'){
+            partida[1][2] = 'O';
+            return 1;
+        }
+        if(partida[1][2] == 'X'){
+            partida[0][1] = 'O';
+            return 1;
+        }
+    }
+    if(partida[0][1] == 'X'){
+        if(partida[2][0] != 'X'){
+            partida[2][0] = 'O';
+            return 1;
+        }
+    }
+    if(partida[1][2] == 'X'){
+        if(partida[2][0] != 'X'){
+            partida[2][0] = 'O';
+            return 1;
+        }
+    }
+    if(partida[2][1] == 'X'){
+        if(partida[0][0] != 'X'){
+            partida[0][0] = 'O';
+            return 1;
+        }
+    }
+    if(partida[1][0] == 'X'){
+        if(partida[2][2] != 'X'){
+            partida[2][2] = 'O';
             return 1;
         }
     }
 
-    //a partir daqui não existe nenhuma forma do jogador ganhar na proxima jogada
-    //verificar qual a melhor jogada pro bot
-    
+    return 0;
 }
