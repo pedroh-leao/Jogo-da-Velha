@@ -1,9 +1,16 @@
-//LEMBRETES PARA IMPLEMENTAR: linhas 409(incluir no ranking), 477(mesma coisa da 409), 526(mesma coisa da 409)
+//LEMBRETES PARA IMPLEMENTAR: linhas 423(incluir no ranking), 481(mesma coisa da 423)
 
 //Pedro Henrique Rabelo Leão de Oliveira - 22.1.4022
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+typedef struct{ //struct usada para o rankeamento
+    char nome[100];
+    int vitorias;
+    int empates;
+    int derrotas;
+}Jogadores;
 
 char menu(); //exibe o menu e retorna a entrada da opção escolhida pelo usuário
 void leNomeJogadores(char *jogador1, char *jogador2, char numJogadores);
@@ -15,10 +22,10 @@ int verificaDigito(char posicao); //verifica se o usuario realmente digitou núm
 int verificaPosicao(int linha, int coluna, char **partida); //verifica se a posição está disponível, retorna 1 caso esteja, e 0 caso contrário
 int verificaPartida(char **partida, char *jogador, int jogadorDaVez); //retorna 1 se a partida acabou e 0 caso contrário
 int validaNomeArquivo(char *nomeArquivo);
+int validaNumJogadores(char *numJogadores); //retorna 0 caso seja um numero de jogadores invalido
 int marcar(char **partida, int jogadorDaVez, char *comando); //retorna 1 caso a marcação dê certo, e 0 caso falhe nas validações
 void salvar(FILE *arquivo, char **partida, char numJogadores, int jogadorDaVez, char *jogador1, char *jogador2, char *nomeArquivo);
-int partidaDeDois(char **partida, char *jogador, int jogadorDaVez, char *outroJogador, int *partidaEmAndamento); //retorna 1 se a partida acabou, 0 caso contrário, e 2 caso o jogador tenha apenas salvado ela ou digitado um comando errado
-int partidaDeUm(char **partida, char *jogador, int jogadorDaVez, int *partidaEmAndamento);//retorna 1 se a partida acabou, 0 caso contrário, e 2 caso o jogador tenha apenas salvado ela ou digitado um comando errado
+int proximoComando(char **partida, char *jogador, int jogadorDaVez, char *outroJogador, int *partidaEmAndamento, char numJogadores); //retorna 1 se a partida acabou, 0 caso contrário, e 2 caso o jogador tenha apenas salvado ela ou digitado um comando errado
 void executarPartida(char numJogadores, char **partida, char *jogador1, char *jogador2, int jogadorDaVez, int *partidaEmAndamento);
 void getJogoSalvo(FILE *arquivo, char **partida, char *jogador1,  char *jogador2, int *partidaEmAndamento, char *numJogadores); //pega o jogo salvo no arquivo, e continua a partida
 int verificaQualJogadorDaVez(char **partida); //usado para continuar uma partida atual (case '3')
@@ -26,6 +33,7 @@ void limpaBuffer(); //limpar os caracteres do buffer até \n
 char **alocaMatriz(int n, int m);
 void liberaMatriz(char **matriz, int n);
 int jogadaDoComputador(char **partida);
+void leArquivoRanking(Jogadores **rankeamento);
 
 int main(){
     printf("Bem vindo ao Jogo da Velha\n\n");
@@ -33,10 +41,14 @@ int main(){
     char opMenu, **partida;
     char jogador1[100], jogador2[100], numJogadores[3];
     partida = alocaMatriz(3, 3);
+    
     FILE *arq;
     char nomeArq[94];
     //variavel para dizer se tem alguma partida em andamento, quando o usuario tentar entrar no case 3
     int partidaEmAndamento = 0; //1 se existe uma em andamento, e 0 caso contrário
+
+    Jogadores *rankeamento; //ranking dos jogadores
+    leArquivoRanking(&rankeamento);
 
     do{
         opMenu = menu();
@@ -50,22 +62,17 @@ int main(){
             case '1': //iniciar novo jogo
                 do{
                     printf("\nDigite o número de jogadores (1 ou 2): ");
-                    //o numJogadores pode ter apenas 1 caracter, já que é 1 ou 2 jogadores, mas o limite do fgets é 3 apenas para fazer a validação
-                    //se o numJogadores[1] != '\n', sinal que o usuario digitou mais de um caracter
-                    fgets(numJogadores, 3, stdin); 
-                    if(numJogadores[1] != '\n'){
-                        limpaBuffer(); //limpando o buffer dos caracteres lidos além 3°
-                        printf("\nNúmero de jogadores inválido!\n");
-                    }
-                    else if(numJogadores[0] != '1' && numJogadores[0] != '2')
-                        printf("\nNúmero de jogadores inválido!\n");
 
-                } while (numJogadores[1]!='\n' || (numJogadores[0] != '1' && numJogadores[0] != '2'));   
+                    /* O numJogadores pode ter apenas 1 caracter, já que é 1 ou 2 jogadores, entretanto o limite do fgets é 3 para fazer a validação,
+                    dessa forma, se o numJogadores[1] != '\n', sinal que o usuario digitou mais de um caracter */
+                    fgets(numJogadores, 3, stdin); 
+
+                } while (!validaNumJogadores(numJogadores));   
 
                 iniciaPartidaVazia(partida); //limpando o tabuleiro das possíveis partidas anteriores
                 leNomeJogadores(jogador1, jogador2, numJogadores[0]);
 
-                executarPartida(numJogadores[0], partida, jogador1,jogador2, 1, &partidaEmAndamento);
+                executarPartida(numJogadores[0], partida, jogador1, numJogadores[0]=='2' ? jogador2 : "Computador", 1, &partidaEmAndamento);
             break;
 
             case '2': //continuar jogo salvo
@@ -91,9 +98,9 @@ int main(){
                 else{
                     //preciso continuar o jogo, tanto se ele tiver começado do zero (case 1), quanto se a partida tiver pegada de um arquivo salvo(case 2)
                     if(verificaQualJogadorDaVez(partida) == 1)
-                        executarPartida(numJogadores[0], partida, jogador1, jogador2, 1, &partidaEmAndamento);
+                        executarPartida(numJogadores[0], partida, jogador1, numJogadores[0]=='2' ? jogador2 : "Computador", 1, &partidaEmAndamento);
                     else
-                        executarPartida(numJogadores[0], partida, jogador1, jogador2, 2, &partidaEmAndamento);
+                        executarPartida(numJogadores[0], partida, jogador1, numJogadores[0]=='2' ? jogador2 : "Computador", 2, &partidaEmAndamento);
                 }
             break;
 
@@ -326,6 +333,19 @@ int validaNomeArquivo(char *nomeArquivo){
     return 1;
 }
 
+int validaNumJogadores(char *numJogadores){
+    //retorna 0 caso seja um numero de jogadores invalido
+    if(numJogadores[1] != '\n' || (numJogadores[0] != '1' && numJogadores[0] != '2')){
+        if(numJogadores[1] != '\n')
+            limpaBuffer(); //limpando o buffer dos caracteres lidos além 3°
+        
+        printf("\nNúmero de jogadores inválido!\n");
+        return 0;
+    }
+
+    return 1;
+}
+
 int marcar(char **partida, int jogadorDaVez, char *comando){
     //retorna 1 caso a marcação dê certo, e 0 caso falhe nas validações
 
@@ -379,91 +399,25 @@ void salvar(FILE *arquivo, char **partida, char numJogadores, int jogadorDaVez, 
     printf("Arquivo “%s” salvo com sucesso!\n", nomeArquivo);
 }
 
-int partidaDeDois(char **partida, char *jogador, int jogadorDaVez, char *outroJogador, int *partidaEmAndamento){ 
-    /*retorno: 
-    1: se a partida acabou, ou o usuario digitou para voltar
-    0: caso a partida continue normalmente,
-    2: caso o jogador tenha apenas salvado a partida ou digitado um comando errado, nesse caso ainda será a vez do mesmo jogador */
-    char comando[100];
-    char acao[7]; //marcar, salvar ou voltar
-
-    leComando(comando, acao, jogador);
-    
-    if(!strcmp(acao, "marcar")){
-        
-        if(!marcar(partida, jogadorDaVez, comando))
-            return 2; //falhou nas validações na hora de marcar (posição já preenchida ou posição inválida)
-
-        exibeJogo(partida);
-        
-        //se verificaPartida() retornar 0, a partida ainda não acabou, caso tenha acabado, retorna 1 e exibe uma msg de parabens ou de empate
-        if(!verificaPartida(partida, jogador, jogadorDaVez)) 
-            return 0;
-        else{ //fim da partida
-            printf("Digite qualquer tecla para continuar!\n");
-            limpaBuffer();
-            *partidaEmAndamento = 0;
-            return 1;
-        }
-
-        //implementar para aos fins das partidas, atualizar o ranking com vitória, empate e derrota de cada jogador
-        //problema: o jogador que não estiver no ranking vai perder seus dados de V, E e D. O que fazer?
-
-    }
-    else if (!strcmp(acao, "salvar"))
-    {
-        FILE *arquivo;
-        char nomeArquivo[94]; //100 - 6  =  comando - os caracteres da acao
-
-        int cont = 7;
-        while(comando[cont] != '\0' && cont<100){
-            nomeArquivo[cont-7] = comando[cont];
-            cont++;
-        }
-        nomeArquivo[cont-7] = '\0';
-        cont = 0;
-
-        //se na posição 0 for um ., é pq a pessoa nao digitou um nome pro arquivo vaĺido
-        //se nas ultimas 4 posições nao for ".txt" a pessoa digitou uma extensao invalida
-        if(!validaNomeArquivo(nomeArquivo))
-            return 2;
-
-        arquivo = fopen(nomeArquivo, "w");
-
-        if(arquivo != NULL){
-            //if para deixar ordenado no arquivo do jogo o nome do jogador 1 primeiro, e do jogador 2 embaixo
-            if(jogadorDaVez == 1)
-                salvar(arquivo, partida, '2', jogadorDaVez, jogador, outroJogador, nomeArquivo);
-            else
-                salvar(arquivo, partida, '2', jogadorDaVez, outroJogador, jogador, nomeArquivo);
-        }        
-
-        return 2;
-    }
-    else{ //voltar
-        return 1;
-    }    
-}
-
-int partidaDeUm(char **partida, char *jogador, int jogadorDaVez, int *partidaEmAndamento){
+int proximoComando(char **partida, char *jogador, int jogadorDaVez, char *outroJogador, int *partidaEmAndamento, char numJogadores){ 
     /*retorno: 
     1: se a partida acabou, ou o usuario digitou para voltar
     0: caso a partida continue normalmente,
     2: caso o jogador tenha apenas salvado a partida ou digitado um comando errado, nesse caso ainda será a vez do mesmo jogador */
     
-    if(jogadorDaVez == 1){
+    if(numJogadores == '2' || jogadorDaVez == 1){
         char comando[100];
         char acao[7]; //marcar, salvar ou voltar
 
         leComando(comando, acao, jogador);
-
-        if(!strcmp(acao, "marcar")){
         
+        if(!strcmp(acao, "marcar")){
+            
             if(!marcar(partida, jogadorDaVez, comando))
                 return 2; //falhou nas validações na hora de marcar (posição já preenchida ou posição inválida)
-            
-            exibeJogo(partida);
 
+            exibeJogo(partida);
+            
             //se verificaPartida() retornar 0, a partida ainda não acabou, caso tenha acabado, retorna 1 e exibe uma msg de parabens ou de empate
             if(!verificaPartida(partida, jogador, jogadorDaVez)) 
                 return 0;
@@ -499,7 +453,15 @@ int partidaDeUm(char **partida, char *jogador, int jogadorDaVez, int *partidaEmA
             arquivo = fopen(nomeArquivo, "w");
 
             if(arquivo != NULL){
-                salvar(arquivo, partida, '1', jogadorDaVez, jogador, "", nomeArquivo);
+                if(numJogadores == '2'){
+                    //if para deixar ordenado no arquivo do jogo o nome do jogador 1 primeiro, e do jogador 2 embaixo
+                    if(jogadorDaVez == 1)
+                        salvar(arquivo, partida, '2', jogadorDaVez, jogador, outroJogador, nomeArquivo);
+                    else
+                        salvar(arquivo, partida, '2', jogadorDaVez, outroJogador, jogador, nomeArquivo);
+                }
+                else
+                    salvar(arquivo, partida, '1', jogadorDaVez, jogador, "", nomeArquivo);
             }        
 
             return 2;
@@ -508,7 +470,7 @@ int partidaDeUm(char **partida, char *jogador, int jogadorDaVez, int *partidaEmA
             return 1;
         }
     }
-    else{ //vez do computador
+    else{ //vez do computador na partida de 1 pessoa
         //executar função de marcar do computador, exibir partida, depois verificar se a partida acabou
         jogadaDoComputador(partida);
         printf("Vez do computador: \n");
@@ -526,40 +488,24 @@ int partidaDeUm(char **partida, char *jogador, int jogadorDaVez, int *partidaEmA
 
         //implementar para aos fins das partidas, atualizar o ranking com vitória, empate e derrota de cada jogador
         //problema: o jogador que não estiver no ranking vai perder seus dados de V, E e D. O que fazer?
-    }
+    }    
 }
 
 void executarPartida(char numJogadores, char **partida, char *jogador1, char *jogador2, int jogadorDaVez, int *partidaEmAndamento){
     *partidaEmAndamento = 1;
     exibeJogo(partida);
-    int partidaFinalizada = 2; //nao posso começar inicializar com 0, pois se não ja pularia a vez do jogador atual ao entrar a primeira vez no while
-
-    if(numJogadores == '1'){ //1 jogador
+    int partidaFinalizada = 2; //nao é inicializado com 0, pois se não ja pularia a vez do jogador atual ao entrar a primeira vez no while
+  
         //jogadorDaVez:   ímpar: vez do jogador 1   par: vez do jogador 2        
+    while(!partidaFinalizada || partidaFinalizada == 2){ //se o proximoComando retornar 2 o jogador apenas salvou a partida ou digitou algo errado
+        if(!partidaFinalizada) //caso o partidaFinalizada tenha recebido 0, a rodada aconteceu normalmente e agr é a vez do outro jogador
+            jogadorDaVez++;
 
-        while(!partidaFinalizada || partidaFinalizada == 2){ //se o partidaDeUm retornar 2 o jogador apenas salvou a partida ou digitou algo errado
-            if(!partidaFinalizada) //caso o partidaFinalizada tenha recebido 0, a rodada aconteceu normalmente e agr é a vez do outro jogador
-                jogadorDaVez++;
-
-            if(jogadorDaVez % 2 == 0)
-                partidaFinalizada = partidaDeUm(partida, jogador1, 2, partidaEmAndamento);
-            else
-                partidaFinalizada = partidaDeUm(partida, jogador1, 1, partidaEmAndamento);
-        }
-    }   
-    else{ //2 jogadores 
-        //jogadorDaVez:   ímpar: vez do jogador 1   par: vez do jogador 2        
-
-        while(!partidaFinalizada || partidaFinalizada == 2){ //se o partidaDeDois retornar 2 o jogador apenas salvou a partida ou digitou algo errado
-            if(!partidaFinalizada) //caso o partidaFinalizada tenha recebido 0, a rodada aconteceu normalmente e agr é a vez do outro jogador
-                jogadorDaVez++;
-
-            if(jogadorDaVez % 2 == 0)
-                partidaFinalizada = partidaDeDois(partida, jogador2, 2, jogador1, partidaEmAndamento);
-            else
-                partidaFinalizada = partidaDeDois(partida, jogador1, 1, jogador2, partidaEmAndamento);
-        }
-    }  
+        if(jogadorDaVez % 2 == 0)
+            partidaFinalizada = proximoComando(partida, jogador2, 2, jogador1, partidaEmAndamento, numJogadores);
+        else
+            partidaFinalizada = proximoComando(partida, jogador1, 1, jogador2, partidaEmAndamento, numJogadores);
+    }
 }
 
 void getJogoSalvo(FILE *arquivo, char **partida, char *jogador1,  char *jogador2, int *partidaEmAndamento, char *numJogadores){
@@ -588,7 +534,7 @@ void getJogoSalvo(FILE *arquivo, char **partida, char *jogador1,  char *jogador2
     
     fclose(arquivo);
 
-    executarPartida(*numJogadores, partida, jogador1, jogador2, jogadorDaVez, partidaEmAndamento);
+    executarPartida(*numJogadores, partida, jogador1, *numJogadores=='2' ? jogador2 : "Computador", jogadorDaVez, partidaEmAndamento);
 }
 
 int verificaQualJogadorDaVez(char **partida){
@@ -1056,4 +1002,27 @@ int jogadaDoComputador(char **partida){
     }
 
     return 0;
+}
+
+void leArquivoRanking(Jogadores **rankeamento){
+    FILE *arqRanking;
+    arqRanking = fopen("velha.ini", "r");
+
+    if(arqRanking == NULL)
+        *rankeamento = (Jogadores *) malloc(0 * sizeof(Jogadores));
+    else{
+        int numJog;
+        fscanf(arqRanking, "%d\n", &numJog);
+        *rankeamento = (Jogadores *) malloc(numJog * sizeof(Jogadores));
+
+        for (int i = 0; i < numJog; i++)
+        {
+            fgets((*rankeamento)[i].nome, 100, arqRanking);
+            (*rankeamento)[i].nome[strlen((*rankeamento)[i].nome) - 1] = '\0';
+            fscanf(arqRanking, "%d %d %d\n", &(*rankeamento)[i].vitorias, &(*rankeamento)[i].empates, &(*rankeamento)[i].derrotas);
+            //printf("%s\n%d %d %d\n", (*rankeamento)[i].nome, (*rankeamento)[i].vitorias, (*rankeamento)[i].empates, (*rankeamento)[i].derrotas);
+        }      
+        
+        fclose(arqRanking);
+    }    
 }
