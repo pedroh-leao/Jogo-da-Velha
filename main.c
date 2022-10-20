@@ -36,6 +36,7 @@ void atualizaArquivoRanking(Jogadores *rankeamento, int size);
 void atualizaVED(Jogadores *rankeamento, int *size, char *jogador, int resultado);
 int existeNoRanking(Jogadores *rankeamento, int size, char *jogador); //verifica se o jogador já está no ranking, caso exista, retorna o indice dele, caso contrário, retorna -1
 void ordenaRanking(Jogadores *rankeamento, int size);
+void realocaVetor(Jogadores **rankeamento, int size); //realoca vetor usando apenas malloc
 void exibePosicaoJogadores(Jogadores *rankeamento, char *jogador1, char *jogador2);
 void exibeRanking(Jogadores *rankeamento, int size);
 
@@ -1074,7 +1075,7 @@ void atualizaArquivoRanking(Jogadores *rankeamento, int size){
         fprintf(arqRanking, "%d %d %d\n", rankeamento[sizeAux-1].vitorias, rankeamento[sizeAux-1].empates, rankeamento[sizeAux-1].derrotas);
     }
     else{
-        int indicePC = existeNoRanking(rankeamento, size, "Computador");
+        int indicePC = existeNoRanking(rankeamento, size, "Computador"); //função que retorna o indice do vetor de acordo com o nome dado como parametro
         fprintf(arqRanking, "%s\n", rankeamento[indicePC].nome);
         fprintf(arqRanking, "%d %d %d\n", rankeamento[indicePC].vitorias, rankeamento[indicePC].empates, rankeamento[indicePC].derrotas);
     }
@@ -1092,7 +1093,7 @@ void atualizaVED(Jogadores *rankeamento, int *size, char *jogador, int resultado
     if(indiceJogador == -1){ //caso o jogador ainda não exista no ranking
         //realocar vetor, iniciar v, e e d do jogador como 0
         *size = *size + 1;
-        rankeamento = (Jogadores *) realloc(rankeamento, *size * sizeof(Jogadores));
+        realocaVetor(&rankeamento, *size);
         strcpy(rankeamento[*size - 1].nome, jogador);
         rankeamento[*size - 1].derrotas = 0;
         rankeamento[*size - 1].empates = 0;
@@ -1141,6 +1142,24 @@ void ordenaRanking(Jogadores *rankeamento, int size){
             }            
         }
     }   
+}
+
+void realocaVetor(Jogadores **rankeamento, int size){
+    //função para realocar o vetor sem usar realloc
+    Jogadores *vetorAux;
+    vetorAux = (Jogadores *) malloc((size-1) * sizeof(Jogadores));
+
+    for (int i = 0; i < size-1; i++){
+        vetorAux[i] = (*rankeamento)[i];
+    }    
+
+    free((*rankeamento));
+    (*rankeamento) = (Jogadores *) malloc(size * sizeof(Jogadores));
+    for (int i = 0; i < size-1; i++){
+        (*rankeamento)[i] = vetorAux[i];
+    }
+    
+    free(vetorAux);
 }
 
 void exibePosicaoJogadores(Jogadores *rankeamento, char *jogador1, char *jogador2){
