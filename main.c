@@ -23,9 +23,9 @@ int validaNomeArquivo(char *nomeArquivo);
 int validaNumJogadores(char *numJogadores); //retorna 0 caso seja um numero de jogadores invalido
 int marcar(char **partida, int jogadorDaVez, char *comando); //retorna 1 caso a marcação dê certo, e 0 caso falhe nas validações
 void salvar(FILE *arquivo, char **partida, char numJogadores, int jogadorDaVez, char *jogador1, char *jogador2, char *nomeArquivo);
-int proximoComando(char **partida, char *jogador, int jogadorDaVez, char *outroJogador, int *partidaEmAndamento, char numJogadores, Jogadores *rankeamento, int *size); //retorna 1 se a partida acabou, 0 caso contrário, e 2 caso o jogador tenha apenas salvado ela ou digitado um comando errado
-void executarPartida(char numJogadores, char **partida, char *jogador1, char *jogador2, int jogadorDaVez, int *partidaEmAndamento, Jogadores *rankeamento, int *size);
-void getJogoSalvo(FILE *arquivo, char **partida, char *jogador1,  char *jogador2, int *partidaEmAndamento, char *numJogadores, Jogadores *rankeamento, int *size); //pega o jogo salvo no arquivo, e continua a partida
+int proximoComando(char **partida, char *jogador, int jogadorDaVez, char *outroJogador, int *partidaEmAndamento, char numJogadores, Jogadores **rankeamento, int *size); //retorna 1 se a partida acabou, 0 caso contrário, e 2 caso o jogador tenha apenas salvado ela ou digitado um comando errado
+void executarPartida(char numJogadores, char **partida, char *jogador1, char *jogador2, int jogadorDaVez, int *partidaEmAndamento, Jogadores **rankeamento, int *size);
+void getJogoSalvo(FILE *arquivo, char **partida, char *jogador1,  char *jogador2, int *partidaEmAndamento, char *numJogadores, Jogadores **rankeamento, int *size); //pega o jogo salvo no arquivo, e continua a partida
 int verificaQualJogadorDaVez(char **partida); //usado para continuar uma partida atual (case '3')
 void limpaBuffer(); //limpar os caracteres do buffer até \n
 char **alocaMatriz(int n, int m);
@@ -33,7 +33,7 @@ void liberaMatriz(char **matriz, int n);
 int jogadaDoComputador(char **partida);
 void leArquivoRanking(Jogadores **rankeamento, int *numJogadores);
 void atualizaArquivoRanking(Jogadores *rankeamento, int size);
-void atualizaVED(Jogadores *rankeamento, int *size, char *jogador, int resultado);
+void atualizaVED(Jogadores **rankeamento, int *size, char *jogador, int resultado);
 int existeNoRanking(Jogadores *rankeamento, int size, char *jogador); //verifica se o jogador já está no ranking, caso exista, retorna o indice dele, caso contrário, retorna -1
 void ordenaRanking(Jogadores *rankeamento, int size);
 void realocaVetor(Jogadores **rankeamento, int size); //realoca vetor usando apenas malloc
@@ -79,7 +79,7 @@ int main(){
                 iniciaPartidaVazia(partida); //limpando o tabuleiro das possíveis partidas anteriores
                 leNomeJogadores(jogador1, jogador2, numJogadores[0]);
 
-                executarPartida(numJogadores[0], partida, jogador1, numJogadores[0]=='2' ? jogador2 : "Computador", 1, &partidaEmAndamento, rankeamento, &size);
+                executarPartida(numJogadores[0], partida, jogador1, jogador2, 1, &partidaEmAndamento, &rankeamento, &size);
             break;
 
             case '2': //continuar jogo salvo
@@ -95,7 +95,7 @@ int main(){
                     }
                 } while (!validaNomeArquivo(nomeArq) || arq == NULL);
                 
-                getJogoSalvo(arq, partida, jogador1, jogador2, &partidaEmAndamento, &numJogadores[0], rankeamento, &size); //pega o jogo salvo no arquivo, e continua a partida
+                getJogoSalvo(arq, partida, jogador1, jogador2, &partidaEmAndamento, &numJogadores[0], &rankeamento, &size); //pega o jogo salvo no arquivo, e continua a partida
 
             break;
 
@@ -105,9 +105,9 @@ int main(){
                 else{
                     //preciso continuar o jogo, tanto se ele tiver começado do zero (case 1), quanto se a partida tiver pegada de um arquivo salvo(case 2)
                     if(verificaQualJogadorDaVez(partida) == 1)
-                        executarPartida(numJogadores[0], partida, jogador1, numJogadores[0]=='2' ? jogador2 : "Computador", 1, &partidaEmAndamento, rankeamento, &size);
+                        executarPartida(numJogadores[0], partida, jogador1, jogador2, 1, &partidaEmAndamento, &rankeamento, &size);
                     else
-                        executarPartida(numJogadores[0], partida, jogador1, numJogadores[0]=='2' ? jogador2 : "Computador", 2, &partidaEmAndamento, rankeamento, &size);
+                        executarPartida(numJogadores[0], partida, jogador1, jogador2, 2, &partidaEmAndamento, &rankeamento, &size);
                 }
             break;
 
@@ -152,15 +152,34 @@ char menu(){
 }
 
 void leNomeJogadores(char *jogador1, char *jogador2, char numJogadores){
-    printf("Digite o nome do jogador 1: ");
-    fgets(jogador1, 100, stdin);
-    jogador1[strlen(jogador1)-1] = '\0';
+    int invalido;
+    do{
+        printf("Digite o nome do jogador 1: ");
+        fgets(jogador1, 100, stdin);
+        jogador1[strlen(jogador1)-1] = '\0';
 
-    if(numJogadores == '2'){
-        printf("Digite o nome do jogador 2: ");
-        fgets(jogador2, 100, stdin);
-        jogador2[strlen(jogador2)-1] = '\0';
-    }
+        if(numJogadores == '2'){
+            printf("Digite o nome do jogador 2: ");
+            fgets(jogador2, 100, stdin);
+            jogador2[strlen(jogador2)-1] = '\0';
+        }
+        else
+            strcpy(jogador2, "Computador");
+
+        invalido = 0;
+        if(!strcmp(jogador1, "") || !strcmp(jogador2, "")){
+            printf("Os nomes não podem ser nulos!\n\n");
+            invalido = 1;
+        }
+        else if(!strcmp(jogador1, "Computador") || !strcmp(jogador2, "Computador")){
+            printf("Os nomes não podem receber \"Computador\"!\n\n");
+            invalido = 1;
+        }
+        else if(!strcmp(jogador1, jogador2)){
+            printf("Os nomes não podem ser iguais!\n\n");
+            invalido = 1;
+        }
+    }while(invalido);
 }
 
 void iniciaPartidaVazia(char **partida){
@@ -408,7 +427,7 @@ void salvar(FILE *arquivo, char **partida, char numJogadores, int jogadorDaVez, 
     printf("Arquivo “%s” salvo com sucesso!\n", nomeArquivo);
 }
 
-int proximoComando(char **partida, char *jogador, int jogadorDaVez, char *outroJogador, int *partidaEmAndamento, char numJogadores, Jogadores *rankeamento, int *size){ 
+int proximoComando(char **partida, char *jogador, int jogadorDaVez, char *outroJogador, int *partidaEmAndamento, char numJogadores, Jogadores **rankeamento, int *size){ 
     /*retorno: 
     1: se a partida acabou, ou o usuario digitou para voltar
     0: caso a partida continue normalmente,
@@ -442,9 +461,9 @@ int proximoComando(char **partida, char *jogador, int jogadorDaVez, char *outroJ
                     atualizaVED(rankeamento, size, jogador, 0);
                     atualizaVED(rankeamento, size, outroJogador, 0);
                 }
-                ordenaRanking(rankeamento, *size);
+                ordenaRanking(*rankeamento, *size);
 
-                exibePosicaoJogadores(rankeamento, jogador, outroJogador);
+                exibePosicaoJogadores(*rankeamento, jogador, outroJogador);
 
                 printf("Digite qualquer tecla para continuar!\n");
                 limpaBuffer();
@@ -503,8 +522,8 @@ int proximoComando(char **partida, char *jogador, int jogadorDaVez, char *outroJ
 
             atualizaVED(rankeamento, size, jogador, 1);
             atualizaVED(rankeamento, size, outroJogador, -1);
-            ordenaRanking(rankeamento, *size);
-            exibePosicaoJogadores(rankeamento, outroJogador, jogador);
+            ordenaRanking(*rankeamento, *size);
+            exibePosicaoJogadores(*rankeamento, outroJogador, jogador);
 
             printf("Digite qualquer tecla para continuar!\n");
             limpaBuffer();
@@ -514,7 +533,7 @@ int proximoComando(char **partida, char *jogador, int jogadorDaVez, char *outroJ
     }    
 }
 
-void executarPartida(char numJogadores, char **partida, char *jogador1, char *jogador2, int jogadorDaVez, int *partidaEmAndamento, Jogadores *rankeamento, int *size){
+void executarPartida(char numJogadores, char **partida, char *jogador1, char *jogador2, int jogadorDaVez, int *partidaEmAndamento, Jogadores **rankeamento, int *size){
     *partidaEmAndamento = 1;
     exibeJogo(partida);
     int partidaFinalizada = 2; //nao é inicializado com 0, pois se não ja pularia a vez do jogador atual ao entrar a primeira vez no while
@@ -531,7 +550,7 @@ void executarPartida(char numJogadores, char **partida, char *jogador1, char *jo
     }
 }
 
-void getJogoSalvo(FILE *arquivo, char **partida, char *jogador1,  char *jogador2, int *partidaEmAndamento, char *numJogadores, Jogadores *rankeamento, int *size){
+void getJogoSalvo(FILE *arquivo, char **partida, char *jogador1,  char *jogador2, int *partidaEmAndamento, char *numJogadores, Jogadores **rankeamento, int *size){
     int jogadorDaVez;
 
     fscanf(arquivo, "%c\n", numJogadores);
@@ -1031,12 +1050,25 @@ void leArquivoRanking(Jogadores **rankeamento, int *numJogadores){
     FILE *arqRanking;
     arqRanking = fopen("velha.ini", "r");
 
-    if(arqRanking == NULL){
+    int emptyFile = 0, nullFile = 1;
+
+    //verifica se o arquivo está vazio
+    if(arqRanking != NULL){
+        nullFile = 0;
+        fseek(arqRanking, 0, SEEK_END);
+
+        if(ftell(arqRanking) == 0)
+            emptyFile = 1;
+    }
+    fseek(arqRanking, 0, SEEK_SET);
+
+    if(nullFile || emptyFile){
         *rankeamento = (Jogadores *) malloc(sizeof(Jogadores));
         strcpy((*rankeamento)[0].nome, "Computador"); //o computador sempre estará no ranking
         (*rankeamento)[0].vitorias = 0;
         (*rankeamento)[0].empates = 0;
         (*rankeamento)[0].derrotas = 0;
+        *numJogadores = 1;
     }
     else{
         fscanf(arqRanking, "%d\n", numJogadores);
@@ -1083,31 +1115,31 @@ void atualizaArquivoRanking(Jogadores *rankeamento, int size){
     fclose(arqRanking);
 }
 
-void atualizaVED(Jogadores *rankeamento, int *size, char *jogador, int resultado){
+void atualizaVED(Jogadores **rankeamento, int *size, char *jogador, int resultado){
     /* resultado = -1 : derrota
     resultado = 0 : empate
     resultado = 1 : vitória */
 
-    int indiceJogador = existeNoRanking(rankeamento, *size, jogador);
+    int indiceJogador = existeNoRanking(*rankeamento, *size, jogador);
 
     if(indiceJogador == -1){ //caso o jogador ainda não exista no ranking
         //realocar vetor, iniciar v, e e d do jogador como 0
         *size = *size + 1;
-        realocaVetor(&rankeamento, *size);
-        strcpy(rankeamento[*size - 1].nome, jogador);
-        rankeamento[*size - 1].derrotas = 0;
-        rankeamento[*size - 1].empates = 0;
-        rankeamento[*size - 1].vitorias = 0;
+        realocaVetor(rankeamento, *size);
+        strcpy((*rankeamento)[*size - 1].nome, jogador);
+        (*rankeamento)[*size - 1].derrotas = 0;
+        (*rankeamento)[*size - 1].empates = 0;
+        (*rankeamento)[*size - 1].vitorias = 0;
 
         indiceJogador = *size - 1;
     }
 
     if(resultado == -1)
-        rankeamento[indiceJogador].derrotas++;
+        (*rankeamento)[indiceJogador].derrotas++;
     else if(resultado == 0)
-        rankeamento[indiceJogador].empates++;
+        (*rankeamento)[indiceJogador].empates++;
     else
-        rankeamento[indiceJogador].vitorias++;
+        (*rankeamento)[indiceJogador].vitorias++;
 }
 
 int existeNoRanking(Jogadores *rankeamento, int size, char *jogador){ 
@@ -1153,8 +1185,8 @@ void realocaVetor(Jogadores **rankeamento, int size){
         vetorAux[i] = (*rankeamento)[i];
     }    
 
-    free((*rankeamento));
-    (*rankeamento) = (Jogadores *) malloc(size * sizeof(Jogadores));
+    free(*rankeamento);
+    *rankeamento = (Jogadores *) malloc(size * sizeof(Jogadores));
     for (int i = 0; i < size-1; i++){
         (*rankeamento)[i] = vetorAux[i];
     }
