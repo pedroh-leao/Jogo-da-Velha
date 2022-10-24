@@ -33,21 +33,38 @@ char menu(){
 }
 
 void leNomeJogadores(char *jogador1, char *jogador2, char numJogadores){
-    int invalido;
+    int invalido, tam1, tam2;
     do{
         printf(WHITE(BOLD("Digite o nome do jogador 1: ")));
         fgets(jogador1, 100, stdin);
         jogador1[strlen(jogador1)-1] = '\0';
+        tam1 = strlen(jogador1);
+
+        while (jogador1[0] == ' '){
+            for(int i = 0; i < tam1; i++){
+                jogador1[i] = jogador1[i+1];
+            }            
+            tam1 = strlen(jogador1);
+        }   
 
         if(numJogadores == '2'){
             printf(WHITE(BOLD("Digite o nome do jogador 2: ")));
             fgets(jogador2, 100, stdin);
             jogador2[strlen(jogador2)-1] = '\0';
+            tam2 = strlen(jogador2);
+
+            while (jogador2[0] == ' '){
+                for(int i = 0; i < tam2; i++){
+                    jogador2[i] = jogador2[i+1];
+                }            
+                tam2 = strlen(jogador2);
+            }
         }
         else
             strcpy(jogador2, "Computador");
 
         invalido = 0;
+
         if(!strcmp(jogador1, "") || !strcmp(jogador2, "")){
             printf(RED(BOLD("Os nomes não podem ser nulos!\n\n")));
             invalido = 1;

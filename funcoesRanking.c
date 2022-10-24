@@ -18,9 +18,10 @@ void leArquivoRanking(Jogadores **rankeamento, int *numJogadores){
 
         if(ftell(arqRanking) == 0)
             emptyFile = 1;
+        
+        fseek(arqRanking, 0, SEEK_SET);
     }
-    fseek(arqRanking, 0, SEEK_SET);
-
+    
     if(nullFile || emptyFile){
         *rankeamento = (Jogadores *) malloc(sizeof(Jogadores));
         strcpy((*rankeamento)[0].nome, "Computador"); //o computador sempre estará no ranking
