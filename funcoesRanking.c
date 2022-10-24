@@ -37,9 +37,11 @@ void leArquivoRanking(Jogadores **rankeamento, int *numJogadores){
         for (int i = 0; i < *numJogadores; i++)
         {
             fgets((*rankeamento)[i].nome, 100, arqRanking);
+            (*rankeamento)[i].nome[strlen((*rankeamento)[i].nome) - 1] = '\0';
+
             if(!strcmp((*rankeamento)[i].nome, "Computador"))
                 computadorPresente = 1;
-            (*rankeamento)[i].nome[strlen((*rankeamento)[i].nome) - 1] = '\0';
+                
             fscanf(arqRanking, "%d %d %d\n", &(*rankeamento)[i].vitorias, &(*rankeamento)[i].empates, &(*rankeamento)[i].derrotas);
         }      
         
